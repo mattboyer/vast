@@ -1,6 +1,6 @@
 from pkg_resources import safe_name, to_filename
 
-# Visual Address-space Survey Tool
+# Vast Address-space Surveying Tool
 PROJECT_NAME = 'vast'
 PROJECT_NAME = to_filename(safe_name(PROJECT_NAME))
 

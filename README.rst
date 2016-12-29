@@ -1,4 +1,4 @@
 VAST
 ====
 
-``vast`` is the Vast Address space Survey Tool.
+``vast`` is the Vast Address space Surveying Tool.
