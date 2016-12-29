@@ -1,1 +1,4 @@
-Setuptools complains if this isn't there.
+VAST
+====
+
+``vast`` is the Vast Address space Survey Tool.
