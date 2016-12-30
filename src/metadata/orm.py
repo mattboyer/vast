@@ -63,5 +63,4 @@ class DataManager(object):
     def all_records(self):
         # Use a baked query?
         # This simply returns a generator-like object
-        return self._sa_session.query(AssignedSubnet).\
-            order_by(AssignedSubnet.network)
+        return self._sa_session.query(AssignedSubnet)

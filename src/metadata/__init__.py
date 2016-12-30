@@ -29,3 +29,7 @@ class RDAPResolutionException(ResolutionException):
 
 class RateLimitationException(ResolutionException):
     pass
+
+
+class DataException(Exception):
+    pass

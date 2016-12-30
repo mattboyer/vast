@@ -1,5 +1,5 @@
 from ..net.IPv4 import Subnet
-from . import get_dec_base
+from . import get_dec_base, DataException
 from .types import SQLAddress
 
 from sqlalchemy import Column, Unicode, SmallInteger, Integer
@@ -62,8 +62,7 @@ class AssignedSubnet(Subnet, sa_base):
             post_update=True,
         )
 
-    # TODO Use a setter?
-    # TODO Make sure this always takes place in a transaction
+    # TODO Use a hybrid property setter?
     def set_next(self, next_subnet):
         setattr(self, 'next', next_subnet)
         next_subnet.previous = self
@@ -73,9 +72,13 @@ class AssignedSubnet(Subnet, sa_base):
         return self._name
 
     @name.setter
-    def set_name(self, name):
-        # TODO Perform some validation?
-        self._name = name
+    def name(self, value):
+        # TODO Perform some sensible validation?
+        if not len(value):
+            raise DataException(
+                "%s name can't be empty" % self.__class__.__name__
+            )
+        self._name = value
 
     def __init__(self, *args):
         super(self.__class__, self).__init__(*args[:2])
