@@ -1,15 +1,12 @@
-import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
+from .. import SQLITE_PATH
 from ..tools.logger import ModuleLogger
 from .assigned import AssignedSubnet
 from . import get_dec_base
 
 log = ModuleLogger(__name__)
-# TODO Take the env into account and/or a conf file
-_SQLITE_DB = 'vast.sqlite'
-SQLITE_PATH = os.path.join(os.path.expanduser('~'), _SQLITE_DB)
 
 
 class DataManager(object):
