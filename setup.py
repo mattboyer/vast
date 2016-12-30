@@ -46,6 +46,7 @@ setup(
     install_requires=[
         'SQLAlchemy',
         'blessings',
+        'pyxdg',
         'requests',
     ],
     entry_points={
