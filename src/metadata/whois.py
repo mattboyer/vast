@@ -38,10 +38,13 @@ class Whois_Resolver(object):
 
         sockinfo = getaddrinfo(
             whois_host,
-            "whois",
+            # Surprisingly, "whois" isn't always present in the "services" DB.
+            # "nicname" appears to be the correct service name.
+            "nicname",
             family=AF_INET
         )
         sockaddr = sockinfo[0][-1]
+        log.debug("Resolved \"%s\" to %s", whois_host, sockaddr)
         output = bytes()
         with socket(family=AF_INET, type=SOCK_STREAM) as whois_socket:
             whois_socket.connect(sockaddr)
