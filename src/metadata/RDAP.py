@@ -1,4 +1,6 @@
-from . import RDAPResolutionException, RateLimitationException, RDAPRedirectException
+from . import (
+    RDAPResolutionException, RateLimitationException, RDAPRedirectException
+)
 from ..net.IPv4 import Address
 from ..tools.logger import ModuleLogger
 from .assigned import AssignedSubnet
@@ -72,7 +74,9 @@ class RDAP_Resolver(object):
 
         rdap_base_url = slash_eight_delegation.rdap_URLs[0]
         rdap_url = rdap_base_url + '/ip/' + str(network.floor())
+        return self.resolve_from_url(rdap_url)
 
+    def resolve_from_url(self, rdap_url):
         rate_limitation_retries = 0
         while rate_limitation_retries < 10:
 
@@ -128,10 +132,11 @@ class RDAP_Resolver(object):
             )
             if redirect is not None:
                 raise RDAPRedirectException(
-                    'Redirection to {0} requested. Provisional assignment: {1}',
+                    'Redirection to {0}. Provisional assignment: {1}',
                     redirect,
                     assigned,
-                    provisional=assigned
+                    provisional=assigned,
+                    redir_url=redirect,
                 )
 
             return assigned

@@ -3,7 +3,9 @@ from .IANA_IPv4_assignments import populate_IANA_IPv4_assignments
 from .RDAP import RDAP_Resolver
 from .whois import Whois_Resolver
 from .constants import reserved_networks
-from . import ResolutionException, RDAPResolutionException, RDAPRedirectException
+from . import (
+    ResolutionException, RDAPResolutionException, RDAPRedirectException
+)
 
 log = ModuleLogger(__name__)
 
@@ -34,7 +36,6 @@ class DelegationResolver(object):
         if reserved_assignment:
             return reserved_assignment
 
-        candidates = []
         try:
             rdap_assignment = self._rdap_resolver.resolve(network)
             # TODO Do some sanity checking!
@@ -42,10 +43,16 @@ class DelegationResolver(object):
             return rdap_assignment
 
         except RDAPRedirectException as redir_ex:
-            provisional = redir_ex._provisional
-            candidates.append(provisional)
-            log.warning("Caught \"%s\". PANIC!!", redir_ex)
-            assert False
+            provisional = redir_ex.provisional
+            log.warning("Caught \"%s\".", redir_ex)
+            try:
+                redirected_assignment = self._rdap_resolver.resolve_from_url(
+                    redir_ex.redir_url
+                )
+            except ResolutionException:
+                return provisional
+            else:
+                return redirected_assignment
 
         except ResolutionException as rdap_ex:
             # Yes, but what if whois is even worse? We need to be able to fall
