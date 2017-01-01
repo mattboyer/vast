@@ -1,4 +1,4 @@
-from . import RDAPResolutionException, RateLimitationException
+from . import RDAPResolutionException, RateLimitationException, RDAPRedirectException
 from ..net.IPv4 import Address
 from ..tools.logger import ModuleLogger
 from .assigned import AssignedSubnet
@@ -23,6 +23,7 @@ class RDAP_Resolver(object):
         '''
         # FIXME Redirection should not be handled here!!!
 
+        redirect_url = None
         req_count = 0
         while req_count < 10:
             network_response = self._session.get(
@@ -39,7 +40,9 @@ class RDAP_Resolver(object):
                 # Maybe we should keep track of the end address if it is
                 # present... just in case the redirection ends up being a wild
                 # goose chase
-                rdap_url = network_response.headers['Location']
+                redirect_url = network_response.headers['Location']
+                log.debug('RDAP redirect to %s', redirect_url)
+                break
 
             if network_response.status_code == requests.codes['OK']:
                 break
@@ -56,7 +59,7 @@ class RDAP_Resolver(object):
                     network_response.status_code
                 )
 
-        return network_response.json()
+        return redirect_url, network_response.json()
 
     def resolve(self, network):
         # Discovers inetnums contained within network
@@ -74,7 +77,7 @@ class RDAP_Resolver(object):
         while rate_limitation_retries < 10:
 
             try:
-                rdap_json = self._get_raw_RDAP_JSON(rdap_url)
+                redirect, rdap_json = self._get_raw_RDAP_JSON(rdap_url)
                 rate_limitation_retries += 1
 
                 try:
@@ -123,6 +126,14 @@ class RDAP_Resolver(object):
                 end_address,
                 rdap_json['name']
             )
+            if redirect is not None:
+                raise RDAPRedirectException(
+                    'Redirection to {0} requested. Provisional assignment: {1}',
+                    redirect,
+                    assigned,
+                    provisional=assigned
+                )
+
             return assigned
         except KeyError as ke:
             import pprint
