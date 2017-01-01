@@ -1,0 +1,15 @@
+language: python 
+sudo: false
+
+python:
+        - "3.5"
+
+before_script:
+        - pip freeze
+
+script:
+        - tox -v
+
+after_success:
+        - cd ${TRAVIS_BUILD_DIR}
+        - coveralls
