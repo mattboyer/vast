@@ -13,3 +13,4 @@ script:
 after_success:
         - cd ${TRAVIS_BUILD_DIR}
         - coveralls
+        - source .tox/py3/bin/activate; vast -h
