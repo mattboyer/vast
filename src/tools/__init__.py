@@ -1,5 +1,4 @@
 import importlib
-import os
 
 COMMAND_REGISTRY = {}
 
