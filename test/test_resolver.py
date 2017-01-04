@@ -1,14 +1,49 @@
 from unittest import TestCase, skip
+from mock import patch, Mock
 
-class test_RIPE_request(TestCase):
+from src.metadata.IANA_IPv4_assignments import populate_IANA_IPv4_assignments
+from src.metadata.IANA_IPv4_assignments import TopLevelDelegation
+from src.metadata.assigned import AssignedSubnet
+from src.net.IPv4 import Subnet, Address
+from src.metadata.constants import reserved_networks
 
-    @skip
-    def test_url(self):
-        r = RIPE_request('foo')
-        self.assertEquals('https://stat.ripe.net/data/foo', r.url)
+from src.metadata.resolver import DelegationResolver, ResolutionException
 
-    @skip
-    def test_get(self):
-        r = RIPE_requests.announced_prefixes
-        print(dir(RIPE_requests))
-        #r.get({'resource': 'AS3333'})
+class test_AssignedSubnetResolver(TestCase):
+
+    @patch('src.metadata.resolver.populate_IANA_IPv4_assignments')
+    def setUp(self, mock_populate_IANA):
+        # For our purposes, let's say that all tests use addresses within
+        # 11.0.0.0/8
+        eleven_dot = Subnet(Address('11.0.0.0'), 8)
+        eleven_dot_delegation = TopLevelDelegation(10)
+        eleven_dot_delegation.rdap_URLs = ['http://fake_rdap/']
+        eleven_dot_delegation.whois_host = ['11.10.10.10']
+        mock_populate_IANA.return_value = {eleven_dot: eleven_dot_delegation}
+        self.resolver = DelegationResolver()
+
+    def test_subnet_is_whole_address_space(self):
+        whole_address_space = AssignedSubnet(Address('10.0.0.0'), 0)
+        self.assertRaises(ResolutionException, self.resolver.validate_assignment, whole_address_space)
+
+    def test_subnet_is_too_large(self):
+        for prefix_len in range(1, 8):
+            very_large_subnet = AssignedSubnet(Address('10.0.0.0'), prefix_len)
+            self.assertRaises(ResolutionException, self.resolver.validate_assignment, very_large_subnet)
+
+    def _reserved_subnets(self, subnet):
+        self.resolver._rdap_resolver.resolve = Mock()
+        resolved_assignment = self.resolver.resolve(subnet)
+        self.assertTrue(resolved_assignment in reserved_networks)
+        for reserved_net in reserved_networks:
+            if reserved_net == resolved_assignment:
+                break
+        self.assertTrue(reserved_net is resolved_assignment)
+        self.assertEquals([], self.resolver._rdap_resolver.resolve.mock_calls)
+
+    def test_reserved_subnets_not_interactively_resolved(self):
+        whole_ten_dot = Subnet(Address('10.0.0.0'), 8)
+        self._reserved_subnets(whole_ten_dot)
+
+        ten_dot_subset = Subnet(Address('10.11.12.0'), 24)
+        self._reserved_subnets(ten_dot_subset)
