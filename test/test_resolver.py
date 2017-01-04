@@ -1,7 +1,5 @@
 from unittest import TestCase, skip
 
-#from metadata import RIPE_request, RIPE_requests
-
 class test_RIPE_request(TestCase):
 
     @skip
