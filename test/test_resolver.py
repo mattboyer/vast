@@ -211,7 +211,7 @@ class test_AssignedSubnetResolver(TestCase):
             mock_whois_resolver.resolve.mock_calls
         )
 
-        self.assertTrue(resolved_assignment, eleven_dot_canon_subnet)
+        self.assertTrue(resolved_assignment is eleven_dot_canon_subnet)
 
     def test_RDAP_successful_redirect_then_failure(self):
         eleven_dot_unknown_size_subnet = Subnet(Address('11.12.13.0'), 32)
@@ -261,4 +261,45 @@ class test_AssignedSubnetResolver(TestCase):
             mock_whois_resolver.resolve.mock_calls
         )
 
-        self.assertTrue(resolved_assignment, eleven_dot_non_canon_subnet)
+        self.assertTrue(resolved_assignment is eleven_dot_non_canon_subnet)
+
+    def test_RDAP_failure_then_whois_success(self):
+        eleven_dot_unknown_size_subnet = Subnet(Address('11.12.13.0'), 32)
+        eleven_dot_valid_subnet = Subnet(Address('11.12.13.0'), 24)
+
+        mock_reserved_resolver = Mock(return_value=None)
+        self.resolver._resolve_reserved_networks = mock_reserved_resolver
+
+        mock_rdap_resolve_from_url = Mock()
+        mock_rdap_resolve_from_url.side_effect = RDAPResolutionException(
+            "Could not resolve using RDAP"
+        )
+        self.resolver._rdap_resolver.resolve_from_url = mock_rdap_resolve_from_url
+
+        mock_whois_resolver = Mock()
+        mock_whois_resolver.resolve = Mock(return_value=eleven_dot_valid_subnet)
+        self.resolver._whois_resolver = mock_whois_resolver
+
+        resolved_assignment = self.resolver.resolve(eleven_dot_unknown_size_subnet)
+
+        # The reserved subnet resolver is called once
+        self.assertEquals(
+            [call(eleven_dot_unknown_size_subnet)],
+            mock_reserved_resolver.mock_calls
+        )
+
+        # The RDAP resolver is called once
+        self.assertEquals(
+            [
+                call('http://fake_rdap/ip/11.12.13.0'),
+            ],
+            mock_rdap_resolve_from_url.mock_calls
+        )
+
+        # The whois resolver is never called
+        self.assertEquals(
+            [call(eleven_dot_unknown_size_subnet, whois_host=None)],
+            mock_whois_resolver.resolve.mock_calls
+        )
+
+        self.assertTrue(resolved_assignment is eleven_dot_valid_subnet)
