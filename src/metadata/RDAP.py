@@ -73,6 +73,9 @@ class RDAP_Resolver(object):
             raise RDAPResolutionException("No RDAP URL")
 
         rdap_base_url = slash_eight_delegation.rdap_URLs[0]
+        # We want to avoid double slashes
+        if rdap_base_url.endswith('/'):
+            rdap_base_url = rdap_base_url[:-1]
         rdap_url = rdap_base_url + '/ip/' + str(network.floor())
         return self.resolve_from_url(rdap_url)
 
