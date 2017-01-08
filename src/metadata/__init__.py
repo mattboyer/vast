@@ -27,6 +27,20 @@ class RDAPResolutionException(ResolutionException):
         self.whois_host = whois_host
 
 
+class RDAPRedirectException(ResolutionException):
+    def __init__(self, msg, *msg_args, provisional=None, redir_url=None):
+        super().__init__(msg, *msg_args)
+        self.provisional = provisional
+        self.redir_url = redir_url
+
+
+class RDAPRedirectException(ResolutionException):
+    def __init__(self, msg, *msg_args, provisional=None, redir_url=None):
+        super().__init__(msg, *msg_args)
+        self.provisional = provisional
+        self.redir_url = redir_url
+
+
 class RateLimitationException(ResolutionException):
     pass
 

@@ -3,15 +3,14 @@ from .IANA_IPv4_assignments import populate_IANA_IPv4_assignments
 from .RDAP import RDAP_Resolver
 from .whois import Whois_Resolver
 from .constants import reserved_networks
-from . import ResolutionException, RDAPResolutionException
+from . import (
+    ResolutionException, RDAPResolutionException, RDAPRedirectException
+)
 
 log = ModuleLogger(__name__)
 
 
 class DelegationResolver(object):
-
-    # TODO document where these reserved networks are defined
-    # Also move this crap to constants
 
     def __init__(self):
         self._iana_top_level = populate_IANA_IPv4_assignments()
@@ -30,6 +29,9 @@ class DelegationResolver(object):
                 return reserved_net
 
     def resolve(self, network):
+        # We need to keep track of potentially multiple candidates for the
+        # given network and eventually return the best one of the bunch
+
         reserved_assignment = self._resolve_reserved_networks(network)
         if reserved_assignment:
             return reserved_assignment
@@ -40,13 +42,24 @@ class DelegationResolver(object):
             self.validate_assignment(rdap_assignment)
             return rdap_assignment
 
+        except RDAPRedirectException as redir_ex:
+            provisional = redir_ex.provisional
+            log.warning("Caught \"%s\".", redir_ex)
+            try:
+                redirected_assignment = self._rdap_resolver.resolve_from_url(
+                    redir_ex.redir_url
+                )
+            except ResolutionException:
+                return provisional
+            else:
+                return redirected_assignment
+
         except ResolutionException as rdap_ex:
-            log.info("Caught \"%s\". Trying whois", rdap_ex)
+            # Yes, but what if whois is even worse? We need to be able to fall
+            # back on any partial information RDAP gave us in that case.
+            log.warning("Caught \"%s\". Trying whois", rdap_ex)
             if isinstance(rdap_ex, RDAPResolutionException):
-                # whois = rdap_ex.whois_host  # pylint:disable=E1101
-                # This will be a full URL... we want to pare it down to just a
-                # hostname
-                whois = None
+                whois = rdap_ex.whois_host  # pylint:disable=E1101
             else:
                 # What if the RDAP query didn't include a port43 entry?
                 whois = None
@@ -56,9 +69,7 @@ class DelegationResolver(object):
                     network,
                     whois_host=whois
                 )
-                # TODO Do some sanity checking!
                 self.validate_assignment(whois_assignment)
-                # How can we selectively commit this object?
                 return whois_assignment
             except ResolutionException as re:
                 log.error(re)
