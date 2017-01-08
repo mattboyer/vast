@@ -47,3 +47,10 @@ class test_AssignedSubnetResolver(TestCase):
 
         ten_dot_subset = Subnet(Address('10.11.12.0'), 24)
         self._reserved_subnets(ten_dot_subset)
+
+    @patch('src.metadata.resolver.DelegationResolver._resolve_reserved_networks')
+    #rdap_assignment = self._rdap_resolver.resolve(network)
+    def test_RDAP_success_no_redirection(self, mock_resolve_resrved):
+        elevent_dot_unknown_size_subnet = Subnet(Address('11.12.13.0'), 32)
+        resolved_assignment = self.resolver.resolve(elevent_dot_unknown_size_subnet)
+        assert False, resolved_assignment
