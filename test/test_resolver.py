@@ -10,6 +10,7 @@ from src.metadata.constants import reserved_networks
 from src.metadata.resolver import (
     DelegationResolver,
     RDAPRedirectException,
+    RDAPResolutionException,
     ResolutionException,
 )
 
@@ -133,7 +134,7 @@ class test_AssignedSubnetResolver(TestCase):
         self.resolver._rdap_resolver.resolve_from_url = mock_rdap_resolve_from_url
 
         mock_whois_resolver = Mock()
-        mock_whois_resolver.resolve = Mock(return_value=eleven_dot_valid_subnet)
+        mock_whois_resolver.resolve = Mock()
         self.resolver._whois_resolver = mock_whois_resolver
 
         resolved_assignment = self.resolver.resolve(eleven_dot_unknown_size_subnet)
@@ -160,3 +161,104 @@ class test_AssignedSubnetResolver(TestCase):
         )
 
         self.assertEquals(resolved_assignment, eleven_dot_valid_subnet)
+
+    def test_RDAP_successful_redirect_then_success(self):
+        eleven_dot_unknown_size_subnet = Subnet(Address('11.12.13.0'), 32)
+        eleven_dot_non_canon_subnet = Subnet(Address('11.12.13.0'), 24)
+        eleven_dot_canon_subnet = Subnet(Address('11.12.13.0'), 24)
+
+        mock_reserved_resolver = Mock(return_value=None)
+        self.resolver._resolve_reserved_networks = mock_reserved_resolver
+
+        # No provisional assignment can be resolved on the first call
+        outcomes = [
+            RDAPRedirectException(
+                "The princess is in another castle. Here's a non-authoritative assignment",
+                redir_url='http://other_fake_rdap/ip/11.12.13.0',
+                provisional=eleven_dot_non_canon_subnet,
+            ),
+            eleven_dot_canon_subnet
+        ]
+
+        mock_rdap_resolve_from_url = Mock()
+        mock_rdap_resolve_from_url.side_effect = outcomes
+        self.resolver._rdap_resolver.resolve_from_url = mock_rdap_resolve_from_url
+
+        mock_whois_resolver = Mock()
+        mock_whois_resolver.resolve = Mock()
+        self.resolver._whois_resolver = mock_whois_resolver
+
+        resolved_assignment = self.resolver.resolve(eleven_dot_unknown_size_subnet)
+
+        # The reserved subnet resolver is called once
+        self.assertEquals(
+            [call(eleven_dot_unknown_size_subnet)],
+            mock_reserved_resolver.mock_calls
+        )
+
+        # The RDAP resolver is called twice
+        self.assertEquals(
+            [
+                call('http://fake_rdap/ip/11.12.13.0'),
+                call('http://other_fake_rdap/ip/11.12.13.0'),
+            ],
+            mock_rdap_resolve_from_url.mock_calls
+        )
+
+        # The whois resolver is never called
+        self.assertEquals(
+            [],
+            mock_whois_resolver.resolve.mock_calls
+        )
+
+        self.assertTrue(resolved_assignment, eleven_dot_canon_subnet)
+
+    def test_RDAP_successful_redirect_then_failure(self):
+        eleven_dot_unknown_size_subnet = Subnet(Address('11.12.13.0'), 32)
+        eleven_dot_non_canon_subnet = Subnet(Address('11.12.13.0'), 24)
+
+        mock_reserved_resolver = Mock(return_value=None)
+        self.resolver._resolve_reserved_networks = mock_reserved_resolver
+
+        # No provisional assignment can be resolved on the first call
+        outcomes = [
+            RDAPRedirectException(
+                "The princess is in another castle. Here's a non-authoritative assignment",
+                redir_url='http://other_fake_rdap/ip/11.12.13.0',
+                provisional=eleven_dot_non_canon_subnet,
+            ),
+            RDAPResolutionException("Oh no! It was one of Bowser's traps all along!")
+        ]
+
+        mock_rdap_resolve_from_url = Mock()
+        mock_rdap_resolve_from_url.side_effect = outcomes
+        self.resolver._rdap_resolver.resolve_from_url = mock_rdap_resolve_from_url
+
+        mock_whois_resolver = Mock()
+        mock_whois_resolver.resolve = Mock()
+        self.resolver._whois_resolver = mock_whois_resolver
+
+        resolved_assignment = self.resolver.resolve(eleven_dot_unknown_size_subnet)
+
+        # The reserved subnet resolver is called once
+        self.assertEquals(
+            [call(eleven_dot_unknown_size_subnet)],
+            mock_reserved_resolver.mock_calls
+        )
+
+        # The RDAP resolver is called twice
+        self.assertEquals(
+            [
+                call('http://fake_rdap/ip/11.12.13.0'),
+                call('http://other_fake_rdap/ip/11.12.13.0'),
+            ],
+            mock_rdap_resolve_from_url.mock_calls
+        )
+
+        # The whois resolver is never called
+        self.assertEquals(
+            [],
+            mock_whois_resolver.resolve.mock_calls
+        )
+
+        self.assertTrue(resolved_assignment, eleven_dot_non_canon_subnet)
