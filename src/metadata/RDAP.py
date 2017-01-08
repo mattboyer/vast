@@ -61,7 +61,12 @@ class RDAP_Resolver(object):
                     network_response.status_code
                 )
 
-        return redirect_url, network_response.json()
+        raw_json = None
+        try:
+            raw_json = network_response.json()
+        except:
+            raise RDAPResolutionException("Malformed JSON in RDAP output")
+        return redirect_url, raw_json
 
     def resolve(self, network):
         # Discovers inetnums contained within network
