@@ -116,6 +116,8 @@ class RDAP_Resolver(object):
             whois_host = rdap_json['port43']
         except KeyError:
             log.warning("RDAP response doesn't include a whois host")
+        else:
+            log.debug("port43 entry: %s", whois_host)
 
         try:
             start_address = rdap_json['startAddress']

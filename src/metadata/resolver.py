@@ -59,10 +59,7 @@ class DelegationResolver(object):
             # back on any partial information RDAP gave us in that case.
             log.warning("Caught \"%s\". Trying whois", rdap_ex)
             if isinstance(rdap_ex, RDAPResolutionException):
-                # whois = rdap_ex.whois_host  # pylint:disable=E1101
-                # This will be a full URL... we want to pare it down to just a
-                # hostname
-                whois = None
+                whois = rdap_ex.whois_host  # pylint:disable=E1101
             else:
                 # What if the RDAP query didn't include a port43 entry?
                 whois = None
@@ -72,9 +69,7 @@ class DelegationResolver(object):
                     network,
                     whois_host=whois
                 )
-                # TODO Do some sanity checking!
                 self.validate_assignment(whois_assignment)
-                # How can we selectively commit this object?
                 return whois_assignment
             except ResolutionException as re:
                 log.error(re)
