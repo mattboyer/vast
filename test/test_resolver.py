@@ -1,5 +1,5 @@
 from unittest import TestCase, skip
-from mock import patch, Mock
+from mock import patch, Mock, call
 
 from src.metadata.IANA_IPv4_assignments import populate_IANA_IPv4_assignments
 from src.metadata.IANA_IPv4_assignments import TopLevelDelegation
@@ -48,9 +48,25 @@ class test_AssignedSubnetResolver(TestCase):
         ten_dot_subset = Subnet(Address('10.11.12.0'), 24)
         self._reserved_subnets(ten_dot_subset)
 
-    @patch('src.metadata.resolver.DelegationResolver._resolve_reserved_networks')
-    #rdap_assignment = self._rdap_resolver.resolve(network)
-    def test_RDAP_success_no_redirection(self, mock_resolve_resrved):
-        elevent_dot_unknown_size_subnet = Subnet(Address('11.12.13.0'), 32)
-        resolved_assignment = self.resolver.resolve(elevent_dot_unknown_size_subnet)
-        assert False, resolved_assignment
+    def test_RDAP_success_no_redirection(self):
+        eleven_dot_unknown_size_subnet = Subnet(Address('11.12.13.0'), 32)
+        eleven_dot_known_size_subnet = Subnet(Address('11.12.13.0'), 24)
+
+        mock_reserved_resolver = Mock(return_value=None)
+        self.resolver._resolve_reserved_networks = mock_reserved_resolver
+
+        mock_rdap_resolver = Mock()
+        mock_rdap_resolver.resolve = Mock(return_value=eleven_dot_known_size_subnet)
+        self.resolver._rdap_resolver = mock_rdap_resolver
+
+        resolved_assignment = self.resolver.resolve(eleven_dot_unknown_size_subnet)
+        # The reserved subnet resovler is called once
+        self.assertEquals(
+            [call(eleven_dot_unknown_size_subnet)],
+            mock_reserved_resolver.mock_calls
+        )
+        # The RDAP resolver is called once
+        self.assertEquals(
+            [call(eleven_dot_unknown_size_subnet)],
+            mock_rdap_resolver.resolve.mock_calls
+        )
