@@ -43,6 +43,10 @@ class AssignedSubnet(Subnet, sa_base):
         return Column(Integer, ForeignKey(cls.id))
 
     @declared_attr
+    def parent_subnet_id(cls):  # pylint:disable=E0213
+        return Column(Integer, ForeignKey(cls.id))
+
+    @declared_attr
     def next(cls):  # pylint:disable=E0213
         return relationship(
             cls,
@@ -59,6 +63,16 @@ class AssignedSubnet(Subnet, sa_base):
             uselist=False,
             remote_side=cls.previous_subnet_id,
             primaryjoin=foreign(cls.previous_subnet_id) == remote(cls.id),
+            post_update=True,
+        )
+
+    @declared_attr
+    def parent(cls):  # pylint:disable=E0213
+        return relationship(
+            cls,
+            uselist=False,
+            remote_side=cls.parent_subnet_id,
+            primaryjoin=foreign(cls.parent_subnet_id) == remote(cls.id),
             post_update=True,
         )
 
