@@ -1,3 +1,4 @@
+from ..metadata.assigned import AssignedSubnet
 from ..tools.logger import ModuleLogger
 
 from collections import defaultdict
@@ -55,7 +56,7 @@ class SubnetLinker(object):
         # TODO We need to find the gaps between contiguous subnets!
         contiguous_batches = reduce(
             SubnetLinker.group_contiguous_subnets,
-            self.data_mgr.all_records(),
+            self.data_mgr.all_records().order_by(AssignedSubnet._network),
             []
         )
         for _, contiguous_sequence in contiguous_batches:
