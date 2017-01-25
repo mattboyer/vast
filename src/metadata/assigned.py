@@ -1,12 +1,12 @@
 from ..net.IPv4 import Subnet
 from . import get_dec_base, DataException
 from .types import SQLAddress
+from ..tools.logger import term
 
 from sqlalchemy import Column, Unicode, SmallInteger, Integer
 from sqlalchemy import UniqueConstraint, ForeignKey
 from sqlalchemy.orm import relationship, remote, foreign
 from sqlalchemy.ext.declarative import declared_attr
-from blessings import Terminal
 
 
 sa_base = get_dec_base()
@@ -102,11 +102,10 @@ class AssignedSubnet(Subnet, sa_base):
         self._prev = None
 
     def __repr__(self):
-        t = Terminal()
         return ("<IPv4 assignment: {t.bold}{0}{t.normal}/{t.green}{1}"
                 "{t.normal} \"{t.yellow}{2}{t.normal}\">").format(
             self._network,
             self.prefix_length,
             self._name,
-            t=t
+            t=term
         )
