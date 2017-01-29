@@ -59,8 +59,8 @@ class test_IPv4_Address(TestCase):
         self.assertNotEquals(a, b)
         self.assertNotEquals(b, a)
 
-    @skip
     def test_invalid_comparisons(self):
+        # Equality comparisons
         with self.assertRaises(TypeError):
             Address([192, 168, 1, 2]) != 'fdds'
         with self.assertRaises(TypeError):
@@ -70,6 +70,7 @@ class test_IPv4_Address(TestCase):
         with self.assertRaises(TypeError):
             'foo' == Address([192, 168, 1, 2])
 
+        # Less-than comparisons
         with self.assertRaises(TypeError):
             Address([192, 168, 1, 2]) < 'fdds'
         with self.assertRaises(TypeError):
@@ -79,6 +80,7 @@ class test_IPv4_Address(TestCase):
         with self.assertRaises(TypeError):
             'foo' <= Address([192, 168, 1, 2])
 
+        # Greater-than comparisons
         with self.assertRaises(TypeError):
             Address([192, 168, 1, 2]) > 'fdds'
         with self.assertRaises(TypeError):

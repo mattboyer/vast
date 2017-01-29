@@ -90,7 +90,7 @@ class Address(object):
     def __eq__(self, other_IP):
         try:
             return self._uint == int(other_IP)
-        except AttributeError:
+        except ValueError:
             raise TypeError("Can only compare {0} to {0}".format(
                 self.__class__.__name__
             ))
@@ -98,7 +98,7 @@ class Address(object):
     def __ne__(self, other_IP):
         try:
             return self._uint != int(other_IP)
-        except AttributeError:
+        except ValueError:
             raise TypeError("Can only compare {0} to {0}".format(
                 self.__class__.__name__
             ))
@@ -106,25 +106,25 @@ class Address(object):
     def __lt__(self, other_IP):
         try:
             return self._uint < int(other_IP)
-        except AttributeError:
+        except ValueError:
             raise TypeError("Can only compare IPv4 to IPv4")
 
     def __le__(self, other_IP):
         try:
             return self._uint <= int(other_IP)
-        except AttributeError:
+        except ValueError:
             raise TypeError("Can only compare IPv4 to IPv4")
 
     def __gt__(self, other_IP):
         try:
             return self._uint > int(other_IP)
-        except AttributeError:
+        except ValueError:
             raise TypeError("Can only compare IPv4 to IPv4")
 
     def __ge__(self, other_IP):
         try:
             return self._uint >= int(other_IP)
-        except AttributeError:
+        except ValueError:
             raise TypeError("Can only compare IPv4 to IPv4")
 
     def __add__(self, increment):
