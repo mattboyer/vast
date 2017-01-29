@@ -1,4 +1,4 @@
-from unittest import TestCase, skip
+from unittest import TestCase
 from mock import patch, Mock, call
 
 from src.metadata.IANA_IPv4_assignments import populate_IANA_IPv4_assignments
