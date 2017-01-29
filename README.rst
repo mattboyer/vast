@@ -2,8 +2,8 @@
     :target: https://travis-ci.org/mattboyer/vast
     :alt: Continuous Integration status
 
-.. image:: https://coveralls.io/repos/mattboyer/vast/badge.svg?branch=master
-    :target: https://coveralls.io/r/mattboyer/vast
+.. image:: https://coveralls.io/repos/github/mattboyer/vast/badge.svg?branch=master
+    :target: https://coveralls.io/github/mattboyer/vast?branch=master
     :alt: Code coverage
 
 .. image:: https://landscape.io/github/mattboyer/vast/master/landscape.svg?style=flat
