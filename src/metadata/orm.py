@@ -61,3 +61,8 @@ class DataManager(object):
         # Use a baked query?
         # This simply returns a generator-like object
         return self._sa_session.query(AssignedSubnet)
+
+    def query(self, *args, **kwargs):
+        # Use a baked query?
+        # This simply returns a generator-like object
+        return self._sa_session.query(*args, **kwargs)

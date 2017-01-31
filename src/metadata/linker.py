@@ -1,8 +1,8 @@
 from ..metadata.assigned import AssignedSubnet
 from ..tools.logger import ModuleLogger
 
-from collections import defaultdict
 from functools import reduce
+from sqlalchemy import func
 
 log = ModuleLogger(__name__)
 
@@ -17,8 +17,11 @@ class SubnetLinker(object):
 
     @staticmethod
     def group_contiguous_subnets(contiguous_subnets, next_subnet_up):
-        # a is a list of 2-tuples comprising a count of contiguous...things and
-        # whether these are contiguous true or false values
+        # contiguous_subnets is a list of 2-tuples, with each comprising a
+        # count of contiguous AssignedSubnet objects and the corresponding list
+        # of contiguous AssignedSubnet instances
+
+        # If we have an empty list, then this is easy enough
         if not contiguous_subnets:
             contiguous_subnets.append((1, [next_subnet_up]))
             return contiguous_subnets
@@ -39,24 +42,20 @@ class SubnetLinker(object):
         return contiguous_subnets
 
     def link(self):
-        prefix_lengths = defaultdict(int)
-        all_subs = self.data_mgr.all_records()
-        subnet_count = 0
-        for sub in all_subs:
-            prefix_lengths[sub.prefix_length] += 1
-            subnet_count += 1
+        # When there are mulitple assigned subnets with the same network
+        # address, we'll want the smallest, (i.e. the one with the longest
+        # prefix length)
+        assigned_subnet_iter = self.data_mgr.query(
+            AssignedSubnet,
+        ).having(
+            func.max(AssignedSubnet._prefix_length)
+        ).group_by(
+            AssignedSubnet._network
+        )
 
-        log.info("%d assigned subnets", subnet_count)
-
-        # FIXME Do we need this here?
-        length_distribution = sorted(prefix_lengths.keys(), reverse=True)
-        for length in length_distribution:
-            log.info("/%d count:	%d", length, prefix_lengths[length])
-
-        # TODO We need to find the gaps between contiguous subnets!
         contiguous_batches = reduce(
             SubnetLinker.group_contiguous_subnets,
-            self.data_mgr.all_records().order_by(AssignedSubnet._network),
+            assigned_subnet_iter,
             []
         )
         for _, contiguous_sequence in contiguous_batches:
