@@ -81,6 +81,10 @@ class AssignedSubnet(Subnet, sa_base):
         setattr(self, 'next', next_subnet)
         next_subnet.previous = self
 
+    # TODO Use a hybrid property setter?
+    def set_parent(self, parent_subnet):
+        setattr(self, 'parent', parent_subnet)
+
     @property
     def name(self):
         return self._name
