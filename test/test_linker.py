@@ -124,3 +124,32 @@ class test_Linker(TestCase):
         self.assertIsNone(b.next)
         self.assertIsNone(b.previous)
         self.assertIsNone(b.parent)
+
+    def test_nested_parent_subnets(self):
+        a = AssignedSubnet(Address('10.11.12.0'), 24, "child")
+        b = AssignedSubnet(Address('10.11.0.0'), 16, "parent")
+        c = AssignedSubnet(Address('10.10.0.0'), 15, "parent")
+        self.mock_data_mgr.update_records((a, b, c))
+
+        self.assertIsNone(a.next)
+        self.assertIsNone(a.previous)
+        self.assertIsNone(a.parent)
+        self.assertIsNone(b.next)
+        self.assertIsNone(b.previous)
+        self.assertIsNone(b.parent)
+        self.assertIsNone(c.next)
+        self.assertIsNone(c.previous)
+        self.assertIsNone(c.parent)
+
+        self.linker.link()
+
+        self.assertEqual(a.parent, b)
+        self.assertEqual(b.parent, c)
+        # The rest is unchanged
+        self.assertIsNone(a.next)
+        self.assertIsNone(a.previous)
+        self.assertIsNone(b.next)
+        self.assertIsNone(b.previous)
+        self.assertIsNone(c.next)
+        self.assertIsNone(c.previous)
+        self.assertIsNone(c.parent)

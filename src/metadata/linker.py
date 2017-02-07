@@ -75,6 +75,8 @@ class SubnetLinker(object):
         ).filter(
             AssignedSubnet.next_subnet_id == null(),
             AssignedSubnet.previous_subnet_id == null(),
+        ).order_by(
+            AssignedSubnet._prefix_length
         )
 
         child_subnets = []
