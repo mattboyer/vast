@@ -5,7 +5,7 @@ from ..tools.logger import term
 
 from sqlalchemy import Column, Unicode, SmallInteger, Integer
 from sqlalchemy import UniqueConstraint, ForeignKey
-from sqlalchemy.orm import relationship, remote, foreign
+from sqlalchemy.orm import relationship, remote, foreign, synonym
 from sqlalchemy.ext.declarative import declared_attr
 
 
@@ -20,13 +20,24 @@ class AssignedSubnet(Subnet, sa_base):
     __tablename__ = 'assigned_ipv4'
 
     id = Column(Integer, primary_key=True)
-    _name = Column(Unicode)
-    _network = Column(SQLAddress)
-    _prefix_length = Column(SmallInteger)
+
+    _name = Column(Unicode, name='name')
+    _network = Column(SQLAddress, name='address')
+    _prefix_length = Column(SmallInteger, name='prefix')
+
+    # These synonyms are provided so that other code can dereference class
+    # attributes that aren't private when, e.g. setting up a query to sort on
+    # prefix length.
+    mapped_name = synonym("_name")
+    mapped_network = synonym("_network")
+    mapped_prefix_length = synonym("_prefix_length")
+
     __table_args__ = (
+        # We want to allow multiple names for the same network address,
+        # provided they refer to assigned subnets of different sizes/prefix
+        # lengths.
         UniqueConstraint(
-            # Do we want to allow multiple names for the same subnet in the DB?
-            '_network', '_prefix_length',
+            _network, _prefix_length,
             name='assigned_ipv4_subnet_key'
         ),
         {
