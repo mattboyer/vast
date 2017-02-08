@@ -48,9 +48,9 @@ class SubnetLinker(object):
         assigned_subnet_iter = self.data_mgr.query(
             AssignedSubnet,
         ).having(
-            func.max(AssignedSubnet.bar)
+            func.max(AssignedSubnet.mapped_prefix_length)
         ).group_by(
-            AssignedSubnet.glurps
+            AssignedSubnet.mapped_network
         )
 
         contiguous_batches = reduce(
@@ -76,7 +76,7 @@ class SubnetLinker(object):
             AssignedSubnet.next_subnet_id == null(),
             AssignedSubnet.previous_subnet_id == null(),
         ).order_by(
-            AssignedSubnet.bar
+            AssignedSubnet.mapped_prefix_length
         )
 
         child_subnets = []
@@ -85,9 +85,9 @@ class SubnetLinker(object):
             children_subnet_iter = self.data_mgr.query(
                 AssignedSubnet
             ).filter(
-                AssignedSubnet.glurps >= cs.floor(),
-                AssignedSubnet.glurps <= cs.ceiling(),
-                AssignedSubnet.bar > cs.prefix_length
+                AssignedSubnet.mapped_network >= cs.floor(),
+                AssignedSubnet.mapped_network <= cs.ceiling(),
+                AssignedSubnet.mapped_prefix_length > cs.prefix_length
             )
             for nested_subnet in children_subnet_iter:
                 log.info("Found %r", nested_subnet)

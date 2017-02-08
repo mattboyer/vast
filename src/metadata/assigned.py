@@ -21,21 +21,20 @@ class AssignedSubnet(Subnet, sa_base):
 
     id = Column(Integer, primary_key=True)
 
-    foo = Column(Unicode, name='name')
-    _name = synonym("foo")
+    _name = Column(Unicode, name='name')
+    _network = Column(SQLAddress, name='address')
+    _prefix_length = Column(SmallInteger, name='prefix')
 
-    glurps = Column(SQLAddress, name='address')
-    _network = synonym("glurps")
-
-    bar = Column(SmallInteger, name='prefix')
-    _prefix_length = synonym("bar")
+    mapped_name = synonym("_name")
+    mapped_network = synonym("_network")
+    mapped_prefix_length = synonym("_prefix_length")
 
     __table_args__ = (
         # We want to allow multiple names for the same network address,
         # provided they refer to assigned subnets of different sizes/prefix
         # lengths.
         UniqueConstraint(
-            'address', 'prefix',
+            _network, _prefix_length,
             name='assigned_ipv4_subnet_key'
         ),
         {
