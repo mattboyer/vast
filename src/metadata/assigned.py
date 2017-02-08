@@ -25,6 +25,9 @@ class AssignedSubnet(Subnet, sa_base):
     _network = Column(SQLAddress, name='address')
     _prefix_length = Column(SmallInteger, name='prefix')
 
+    # These synonyms are provided so that other code can dereference class
+    # attributes that aren't private when, e.g. setting up a query to sort on
+    # prefix length.
     mapped_name = synonym("_name")
     mapped_network = synonym("_network")
     mapped_prefix_length = synonym("_prefix_length")
