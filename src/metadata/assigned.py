@@ -5,7 +5,7 @@ from ..tools.logger import term
 
 from sqlalchemy import Column, Unicode, SmallInteger, Integer
 from sqlalchemy import UniqueConstraint, ForeignKey
-from sqlalchemy.orm import relationship, remote, foreign
+from sqlalchemy.orm import relationship, remote, foreign, synonym
 from sqlalchemy.ext.declarative import declared_attr
 
 
@@ -20,9 +20,16 @@ class AssignedSubnet(Subnet, sa_base):
     __tablename__ = 'assigned_ipv4'
 
     id = Column(Integer, primary_key=True)
-    _name = Column(Unicode, name='name')
-    _network = Column(SQLAddress, name='address')
-    _prefix_length = Column(SmallInteger, name='prefix')
+
+    foo = Column(Unicode, name='name')
+    _name = synonym("foo")
+
+    glurps = Column(SQLAddress, name='address')
+    _network = synonym("glurps")
+
+    bar = Column(SmallInteger, name='prefix')
+    _prefix_length = synonym("bar")
+
     __table_args__ = (
         # We want to allow multiple names for the same network address,
         # provided they refer to assigned subnets of different sizes/prefix
