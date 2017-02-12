@@ -3,8 +3,6 @@ from ..metadata.orm import DataManager
 from ..metadata.linker import SubnetLinker
 from ..tools.logger import ModuleLogger
 
-from collections import defaultdict
-
 log = ModuleLogger(__name__)
 
 
