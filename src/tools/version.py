@@ -10,7 +10,7 @@ log = ModuleLogger(__name__)
 @CLI_subcmd('version')
 class AnalyseCmd(Command):
     '''
-    Display version information
+    Displays version information
     '''
 
     def run(self, arg_ns):

@@ -12,7 +12,7 @@ log = ModuleLogger(__name__)
 @CLI_subcmd('map')
 class MapCmd(Command):
     '''
-    Populate the IPv4 address-space database
+    Populates the IPv4 address-space database
     '''
 
     @classmethod

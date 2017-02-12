@@ -1,6 +1,5 @@
 from . import Command, CLI_subcmd
 from ..metadata.orm import DataManager
-from ..metadata.linker import SubnetLinker
 from ..tools.logger import ModuleLogger
 
 from collections import defaultdict
@@ -8,10 +7,10 @@ from collections import defaultdict
 log = ModuleLogger(__name__)
 
 
-@CLI_subcmd('analyse')
-class AnalyseCmd(Command):
+@CLI_subcmd('stats')
+class StatsCmd(Command):
     '''
-    Produces coverage stats and triggers the linker
+    Produces coverage stats
     '''
 
     def __init__(self):
@@ -19,11 +18,7 @@ class AnalyseCmd(Command):
 
     def run(self, arg_ns):
         self.data_mgr = DataManager()
-        linker = SubnetLinker(self.data_mgr)
         self._print_stats()
-        # TODO We need to find the gaps between contiguous subnets!
-        # FIXME Shouldn't that be its own command?
-        linker.link()
 
     def _print_stats(self):
         prefix_lengths = defaultdict(int)
