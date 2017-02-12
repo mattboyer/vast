@@ -1,8 +1,10 @@
 from . import Command, CLI_subcmd
 from ..metadata.orm import DataManager
+from ..net.IPv4 import Address
 from ..tools.logger import ModuleLogger
 
 from collections import defaultdict
+from decimal import Decimal
 
 log = ModuleLogger(__name__)
 
@@ -18,9 +20,10 @@ class StatsCmd(Command):
 
     def run(self, arg_ns):
         self.data_mgr = DataManager()
-        self._print_stats()
+        self._length_stats()
+        self._coverage_stats()
 
-    def _print_stats(self):
+    def _length_stats(self):
         prefix_lengths = defaultdict(int)
         all_subs = self.data_mgr.all_records()
         subnet_count = 0
@@ -33,3 +36,20 @@ class StatsCmd(Command):
         length_distribution = sorted(prefix_lengths.keys(), reverse=True)
         for length in length_distribution:
             log.info("/%d count:	%d", length, prefix_lengths[length])
+
+    def _coverage_stats(self):
+        contiguous_coverage = self.data_mgr.group_contiguous_subnets()
+        whole_unicast_address_space = int(Address("225.255.255.255")) + 1
+        total_unicast_coverage = 0
+
+        for contig_block in contiguous_coverage:
+            contig_start = contig_block[0].floor()
+            contig_end = contig_block[-1].ceiling()
+            contig_length = sum(len(subnet) for subnet in contig_block)
+            total_unicast_coverage += contig_length
+            log.debug("%r → %r: %r", contig_start, contig_end, contig_length)
+
+        log.info("Total coverage: %d", total_unicast_coverage)
+        coverage = round(100 * (Decimal(total_unicast_coverage) /
+                                Decimal(whole_unicast_address_space)), 3)
+        log.info("Coverage: %s %%", coverage)

@@ -1,5 +1,8 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy import func
+
+from functools import reduce
 
 from .. import SQLITE_PATH
 from ..tools.logger import ModuleLogger
@@ -64,7 +67,48 @@ class DataManager(object):
         # This simply returns a generator-like object
         return self._sa_session.query(AssignedSubnet)
 
+    def fine_subnet_iter(self):
+        # This simply returns a generator-like object
+
+        # When there are mulitple assigned subnets with the same network
+        # address, we'll want the smallest, (i.e. the one with the longest
+        # prefix length)
+        assigned_subnet_iter = self.query(
+            AssignedSubnet,
+        ).having(
+            func.max(AssignedSubnet.mapped_prefix_length)
+        ).group_by(
+            AssignedSubnet.mapped_network
+        )
+        return assigned_subnet_iter
+
     def query(self, *args, **kwargs):
         # Use a baked query?
         # This simply returns a generator-like object
         return self._sa_session.query(*args, **kwargs)
+
+    @staticmethod
+    def reduce_contiguous_subnets(contiguous_subnets, next_subnet_up):
+        # If we have an empty list, then this is easy enough
+        if not contiguous_subnets:
+            contiguous_subnets.append([next_subnet_up])
+            return contiguous_subnets
+
+        # We have a non-empty list
+        contiguous_list = contiguous_subnets[-1]
+        if int(next_subnet_up.floor()) == \
+                1 + int(contiguous_list[-1].ceiling()):
+
+            contiguous_list.append(next_subnet_up)
+            contiguous_subnets[-1] = contiguous_list
+        else:
+            contiguous_subnets.append([next_subnet_up])
+        return contiguous_subnets
+
+    def group_contiguous_subnets(self):
+        contiguous_subnets = reduce(
+            DataManager.reduce_contiguous_subnets,
+            self.fine_subnet_iter(),
+            []
+        )
+        return contiguous_subnets

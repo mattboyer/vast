@@ -18,5 +18,4 @@ class LinkCmd(Command):
     def run(self, arg_ns):
         self.data_mgr = DataManager()
         linker = SubnetLinker(self.data_mgr)
-        # TODO We need to find the gaps between contiguous subnets!
         linker.link()
