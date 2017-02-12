@@ -1,7 +1,6 @@
 from ..metadata.assigned import AssignedSubnet
 from ..tools.logger import ModuleLogger
 
-from functools import reduce
 from sqlalchemy import null
 
 log = ModuleLogger(__name__)
@@ -16,11 +15,7 @@ class SubnetLinker(object):
         self.data_mgr = data_mgr
 
     def link(self):
-        contiguous_batches = reduce(
-            self.data_mgr.reduce_contiguous_subnets,
-            self.data_mgr.fine_subnet_iter(),
-            []
-        )
+        contiguous_batches = self.data_mgr.group_contiguous_subnets()
         for contiguous_sequence in contiguous_batches:
             # Set adjacency relationships - the 'previous backref' is
             # populated automagically

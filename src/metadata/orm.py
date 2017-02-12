@@ -2,6 +2,8 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import func
 
+from functools import reduce
+
 from .. import SQLITE_PATH
 from ..tools.logger import ModuleLogger
 from .assigned import AssignedSubnet
@@ -101,4 +103,12 @@ class DataManager(object):
             contiguous_subnets[-1] = contiguous_list
         else:
             contiguous_subnets.append([next_subnet_up])
+        return contiguous_subnets
+
+    def group_contiguous_subnets(self):
+        contiguous_subnets = reduce(
+            DataManager.reduce_contiguous_subnets,
+            self.fine_subnet_iter(),
+            []
+        )
         return contiguous_subnets

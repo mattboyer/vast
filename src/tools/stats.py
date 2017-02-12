@@ -42,21 +42,7 @@ class StatsCmd(Command):
             log.info("/%d count:	%d", length, prefix_lengths[length])
 
     def _coverage_stats(self):
-        # TODO We need to find the gaps between contiguous subnets!
-        assigned_subnet_iter = self.data_mgr.query(
-            AssignedSubnet,
-        ).having(
-            func.max(AssignedSubnet.mapped_prefix_length)
-        ).group_by(
-            AssignedSubnet.mapped_network
-        )
-
-        contiguous_coverage = reduce(
-            DataManager.reduce_contiguous_subnets,
-            assigned_subnet_iter,
-            []
-        )
-
+        contiguous_coverage = self.data_mgr.group_contiguous_subnets()
         whole_unicast_address_space = int(Address("225.255.255.255")) + 1
         total_unicast_coverage = 0
 
