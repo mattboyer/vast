@@ -1,14 +1,11 @@
 from . import Command, CLI_subcmd
 from ..metadata.orm import DataManager
 from ..metadata.assigned import AssignedSubnet
-from ..net.IPv4 import Address, Subnet
+from ..net.IPv4 import Address
 from ..tools.logger import ModuleLogger
 
 from collections import defaultdict
 from decimal import Decimal
-from functools import reduce
-
-from sqlalchemy import func
 
 log = ModuleLogger(__name__)
 
