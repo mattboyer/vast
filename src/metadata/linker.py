@@ -32,16 +32,6 @@ class SubnetLinker(object):
             # Update the prev/next fields
             self.data_mgr.update_records(contiguous_sequence)
 
-        for contiguous_sequence in contiguous_batches:
-            start = contiguous_sequence[0].floor()
-            end = contiguous_sequence[-1].ceiling()
-            log.info(
-                "%d contiguous subs: %s - %s",
-                len(contiguous_sequence),
-                start,
-                end
-            )
-
         # Let's inspect the subnets that have neither a next nor a prev, ie.
         # those subnets that weren't the smallest for their network address
         container_subnet_iter = self.data_mgr.query(
