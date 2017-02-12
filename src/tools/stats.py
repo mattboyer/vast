@@ -8,7 +8,7 @@ log = ModuleLogger(__name__)
 
 
 @CLI_subcmd('stats')
-class AnalyseCmd(Command):
+class StatsCmd(Command):
     '''
     Produces coverage stats
     '''

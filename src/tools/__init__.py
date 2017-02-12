@@ -5,7 +5,7 @@ COMMAND_REGISTRY = {}
 
 def register():
     # TODO Make this dynamic, somehow
-    for mod in ('mapper', 'analyse', 'version', 'link'):
+    for mod in ('mapper', 'stats', 'version', 'link'):
         importlib.import_module('.' + mod, package=__name__)
 
 
