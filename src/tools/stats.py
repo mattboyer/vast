@@ -1,9 +1,11 @@
 from . import Command, CLI_subcmd
 from ..metadata.orm import DataManager
 from ..metadata.assigned import AssignedSubnet
+from ..net.IPv4 import Address, Subnet
 from ..tools.logger import ModuleLogger
 
 from collections import defaultdict
+from decimal import Decimal
 from functools import reduce
 
 from sqlalchemy import func
@@ -74,8 +76,17 @@ class StatsCmd(Command):
             []
         )
 
+        whole_unicast_address_space = int(Address("225.255.255.255")) + 1
+        total_unicast_coverage = 0
+
         for sub in contiguous_coverage:
             contig_start = sub[0].floor()
             contig_end = sub[-1].ceiling()
             contig_length = sum(len(s) for s in sub)
-            log.info("%r → %r: %r", contig_start, contig_end, contig_length)
+            total_unicast_coverage += contig_length
+            log.debug("%r → %r: %r", contig_start, contig_end, contig_length)
+
+        log.info("Total coverage: %d", total_unicast_coverage)
+        coverage = 100 * (Decimal(total_unicast_coverage) /
+                          Decimal(whole_unicast_address_space))
+        log.info("Coverage: %s %%", coverage)
