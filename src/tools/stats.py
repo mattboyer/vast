@@ -24,7 +24,8 @@ class StatsCmd(Command):
 
     def run(self, arg_ns):
         self.data_mgr = DataManager()
-        self._print_stats()
+        self._length_stats()
+        self._coverage_stats()
 
     @staticmethod
     def enumerate_contiguous_subnets(contiguous_subnets, next_subnet_up):
@@ -48,7 +49,7 @@ class StatsCmd(Command):
             contiguous_subnets.append([next_subnet_up])
         return contiguous_subnets
 
-    def _print_stats(self):
+    def _length_stats(self):
         prefix_lengths = defaultdict(int)
         all_subs = self.data_mgr.all_records()
         subnet_count = 0
@@ -62,6 +63,7 @@ class StatsCmd(Command):
         for length in length_distribution:
             log.info("/%d count:	%d", length, prefix_lengths[length])
 
+    def _coverage_stats(self):
         assigned_subnet_iter = self.data_mgr.query(
             AssignedSubnet,
         ).having(
@@ -79,14 +81,14 @@ class StatsCmd(Command):
         whole_unicast_address_space = int(Address("225.255.255.255")) + 1
         total_unicast_coverage = 0
 
-        for sub in contiguous_coverage:
-            contig_start = sub[0].floor()
-            contig_end = sub[-1].ceiling()
-            contig_length = sum(len(s) for s in sub)
+        for contig_block in contiguous_coverage:
+            contig_start = contig_block[0].floor()
+            contig_end = contig_block[-1].ceiling()
+            contig_length = sum(len(subnet) for subnet in contig_block)
             total_unicast_coverage += contig_length
             log.debug("%r → %r: %r", contig_start, contig_end, contig_length)
 
         log.info("Total coverage: %d", total_unicast_coverage)
-        coverage = 100 * (Decimal(total_unicast_coverage) /
-                          Decimal(whole_unicast_address_space))
+        coverage = round(100 * (Decimal(total_unicast_coverage) /
+                                Decimal(whole_unicast_address_space)), 3)
         log.info("Coverage: %s %%", coverage)
