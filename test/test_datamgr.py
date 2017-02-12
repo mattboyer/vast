@@ -47,3 +47,15 @@ class test_data_mgr(TestCase):
         self.assertTrue(subnet_b in self.data_mgr.fine_subnet_iter())
         self.assertFalse(subnet_c in self.data_mgr.fine_subnet_iter())
         self.assertEquals([subnet_a, subnet_b], list(self.data_mgr.fine_subnet_iter()))
+
+    def test_reduce_subnets(self):
+        subnet_b = AssignedSubnet(Address('11.0.0.0'), 8, "bravo")
+        subnet_a = AssignedSubnet(Address('10.0.0.0'), 8, "alpha")
+        subnet_c = AssignedSubnet(Address('10.0.0.0'), 7, "charlie")
+        subnet_a.next = subnet_b
+        subnet_b.previous = subnet_a
+        subnet_a.parent = subnet_c
+        subnet_b.parent = subnet_c
+
+        all_subs = (subnet_a, subnet_b, subnet_c)
+        self.data_mgr.update_records(all_subs)
