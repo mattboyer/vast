@@ -2,7 +2,7 @@ from ..metadata.assigned import AssignedSubnet
 from ..tools.logger import ModuleLogger
 
 from functools import reduce
-from sqlalchemy import func, null
+from sqlalchemy import null
 
 log = ModuleLogger(__name__)
 
@@ -42,20 +42,9 @@ class SubnetLinker(object):
         return contiguous_subnets
 
     def link(self):
-        # When there are mulitple assigned subnets with the same network
-        # address, we'll want the smallest, (i.e. the one with the longest
-        # prefix length)
-        assigned_subnet_iter = self.data_mgr.query(
-            AssignedSubnet,
-        ).having(
-            func.max(AssignedSubnet.mapped_prefix_length)
-        ).group_by(
-            AssignedSubnet.mapped_network
-        )
-
         contiguous_batches = reduce(
             SubnetLinker.group_contiguous_subnets,
-            assigned_subnet_iter,
+            self.data_mgr.fine_subnet_iter(),
             []
         )
         for _, contiguous_sequence in contiguous_batches:

@@ -27,28 +27,6 @@ class StatsCmd(Command):
         self._length_stats()
         self._coverage_stats()
 
-    @staticmethod
-    def enumerate_contiguous_subnets(contiguous_subnets, next_subnet_up):
-        # contiguous_subnets is a list of 2-tuples, with each comprising a
-        # count of contiguous AssignedSubnet objects and the corresponding list
-        # of contiguous AssignedSubnet instances
-
-        # If we have an empty list, then this is easy enough
-        if not contiguous_subnets:
-            contiguous_subnets.append([next_subnet_up])
-            return contiguous_subnets
-
-        # We have a non-empty list
-        contiguous_list = contiguous_subnets[-1]
-        if int(next_subnet_up.floor()) == \
-                1 + int(contiguous_list[-1].ceiling()):
-
-            contiguous_list.append(next_subnet_up)
-            contiguous_subnets[-1] = contiguous_list
-        else:
-            contiguous_subnets.append([next_subnet_up])
-        return contiguous_subnets
-
     def _length_stats(self):
         prefix_lengths = defaultdict(int)
         all_subs = self.data_mgr.all_records()
@@ -64,6 +42,7 @@ class StatsCmd(Command):
             log.info("/%d count:	%d", length, prefix_lengths[length])
 
     def _coverage_stats(self):
+        # TODO We need to find the gaps between contiguous subnets!
         assigned_subnet_iter = self.data_mgr.query(
             AssignedSubnet,
         ).having(
@@ -73,7 +52,7 @@ class StatsCmd(Command):
         )
 
         contiguous_coverage = reduce(
-            self.enumerate_contiguous_subnets,
+            DataManager.reduce_contiguous_subnets,
             assigned_subnet_iter,
             []
         )
