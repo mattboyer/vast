@@ -1,6 +1,5 @@
 from . import Command, CLI_subcmd
 from ..metadata.orm import DataManager
-from ..metadata.assigned import AssignedSubnet
 from ..net.IPv4 import Address
 from ..tools.logger import ModuleLogger
 
