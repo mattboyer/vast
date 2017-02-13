@@ -268,8 +268,6 @@ class test_RDAP_resolver(TestCase):
         )
 
     def test_raw_JSON_getter_redirect_on_second_try(self):
-
-
         first_response = Mock(status_code=500, is_redirect=False)
         first_response.json = Mock(return_value='WTF')
         #
