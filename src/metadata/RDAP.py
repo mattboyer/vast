@@ -55,6 +55,7 @@ class RDAP_Resolver(object):
                     rdap_url
                 )
 
+            # What codes exactly does this cover?
             if network_response.status_code == requests.codes['BAD_REQUEST']:
                 raise RDAPResolutionException(
                     "RDAP request returned {0}",

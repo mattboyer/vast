@@ -6,6 +6,7 @@ from src.metadata.RDAP import RDAP_Resolver, RDAPResolutionException
 
 class test_RDAP_resolver(TestCase):
     TEST_URI = 'http://example.org/foo'
+    TEST_REDIR_URI = 'http://example.com/foo'
 
     def setUp(self):
         self._delegation_rslvr = Mock()
@@ -244,5 +245,55 @@ class test_RDAP_resolver(TestCase):
         self.assertEquals(
             # We never allow requests to handle redirects
             10 * [call(self.TEST_URI, allow_redirects=False),],
+            self.rslvr._session.get.mock_calls
+        )
+
+    def test_raw_JSON_getter_redirect_on_first_try(self):
+        response = Mock(status_code=200, is_redirect=True)
+        response.headers = {'Location': self.TEST_REDIR_URI}
+        response.json = Mock(return_value='{}')
+
+        self.rslvr._session = Mock()
+        self.rslvr._session.get = Mock(return_value=response)
+        redir_url, json = self.rslvr._get_raw_RDAP_JSON(self.TEST_URI)
+
+        self.assertEquals(self.TEST_REDIR_URI, redir_url)
+        self.assertEquals(json, '{}')
+
+        # We only called requests' get() the once
+        self.assertEquals(
+            # We never allow requests to handle redirects
+            [call(self.TEST_URI, allow_redirects=False)],
+            self.rslvr._session.get.mock_calls
+        )
+
+    def test_raw_JSON_getter_redirect_on_second_try(self):
+
+
+        first_response = Mock(status_code=500, is_redirect=False)
+        first_response.json = Mock(return_value='WTF')
+        #
+        second_response = Mock(status_code=200, is_redirect=True)
+        second_response.headers = {'Location': self.TEST_REDIR_URI}
+        second_response.json = Mock(return_value='{}')
+
+        self.rslvr._session = Mock()
+        self.rslvr._session.get = Mock(
+            side_effect=[first_response, second_response]
+        )
+
+        redir_url, json = self.rslvr._get_raw_RDAP_JSON(self.TEST_URI)
+
+        self.assertEquals(self.TEST_REDIR_URI, redir_url)
+        self.assertEquals(json, '{}')
+
+        # We only called requests' get() the once
+        self.assertEquals(
+            # We never allow requests to handle redirects, therefore there are
+            # NO calls to the redirected URI
+            [
+                call(self.TEST_URI, allow_redirects=False),
+                call(self.TEST_URI, allow_redirects=False),
+            ],
             self.rslvr._session.get.mock_calls
         )
