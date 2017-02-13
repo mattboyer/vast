@@ -114,6 +114,64 @@ class test_RDAP_resolver(TestCase):
             self.rslvr._session.get.mock_calls
         )
 
+    def test_raw_JSON_getter_404_on_second_try(self):
+        first_response = Mock(status_code=500, is_redirect=False)
+        first_response.json = Mock(return_value='WTF')
+
+        second_response = Mock(status_code=404, is_redirect=False)
+        second_response.json = Mock(return_value='{}')
+
+        self.rslvr._session = Mock()
+        self.rslvr._session.get = Mock(
+            side_effect=[first_response, second_response]
+        )
+
+        with self.assertRaises(RDAPResolutionException) as ex:
+            self.rslvr._get_raw_RDAP_JSON(self.TEST_URI)
+        self.assertEquals(
+            "RDAP resource not found: " + self.TEST_URI,
+            str(ex.exception)
+        )
+
+        # We only called requests' get() twice
+        self.assertEquals(
+            # We never allow requests to handle redirects
+            [
+                call(self.TEST_URI, allow_redirects=False),
+                call(self.TEST_URI, allow_redirects=False),
+            ],
+            self.rslvr._session.get.mock_calls
+        )
+
+    def test_raw_JSON_getter_malformed_on_second_try(self):
+        first_response = Mock(status_code=500, is_redirect=False)
+        first_response.json = Mock(return_value='WTF')
+
+        second_response = Mock(status_code=200, is_redirect=False)
+        second_response.json = Mock(side_effect=ValueError)
+
+        self.rslvr._session = Mock()
+        self.rslvr._session.get = Mock(
+            side_effect=[first_response, second_response]
+        )
+
+        with self.assertRaises(RDAPResolutionException) as ex:
+            self.rslvr._get_raw_RDAP_JSON(self.TEST_URI)
+        self.assertEquals(
+            "Malformed JSON in RDAP output",
+            str(ex.exception)
+        )
+
+        # We only called requests' get() twice
+        self.assertEquals(
+            # We never allow requests to handle redirects
+            [
+                call(self.TEST_URI, allow_redirects=False),
+                call(self.TEST_URI, allow_redirects=False),
+            ],
+            self.rslvr._session.get.mock_calls
+        )
+
     def test_raw_JSON_getter_out_of_retries(self):
         bad_response = Mock(status_code=500, is_redirect=False)
         # What if we accidentally have valid JSON in the 500 response body?
