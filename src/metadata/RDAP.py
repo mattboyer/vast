@@ -42,6 +42,7 @@ class RDAP_Resolver(object):
                 # Maybe we should keep track of the end address if it is
                 # present... just in case the redirection ends up being a wild
                 # goose chase
+                # XXX Also, what if this header doesn't exist?
                 redirect_url = network_response.headers['Location']
                 log.debug('RDAP redirect to %s', redirect_url)
                 break

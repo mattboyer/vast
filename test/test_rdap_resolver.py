@@ -295,3 +295,17 @@ class test_RDAP_resolver(TestCase):
             ],
             self.rslvr._session.get.mock_calls
         )
+
+    ########
+
+    def test_resolve_from_url_success_no_redirection(self):
+        response = Mock(status_code=200, is_redirect=False)
+        response.json = Mock(return_value={
+            'startAddress': '10.0.0.0',
+            'endAddress': '10.255.255.255',
+            'name': 'foo',
+        })
+        self.rslvr._session = Mock()
+        self.rslvr._session.get = Mock(return_value=response)
+
+        self.rslvr.resolve_from_url(self.TEST_URI)
