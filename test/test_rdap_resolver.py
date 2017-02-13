@@ -44,3 +44,34 @@ class test_RDAP_resolver(TestCase):
             [call(self.TEST_URI, allow_redirects=False)],
             self.rslvr._session.get.mock_calls
         )
+
+    def test_raw_JSON_getter_400_on_first_try(self):
+        response = Mock(status_code=400, is_redirect=False)
+
+        self.rslvr._session = Mock()
+        self.rslvr._session.get = Mock(return_value=response)
+        with self.assertRaises(RDAPResolutionException):
+            self.rslvr._get_raw_RDAP_JSON(self.TEST_URI)
+
+        # We only called requests' get() the once
+        self.assertEquals(
+            # We never allow requests to handle redirects
+            [call(self.TEST_URI, allow_redirects=False)],
+            self.rslvr._session.get.mock_calls
+        )
+
+    def test_raw_JSON_getter_malformed_JSON_on_first_try(self):
+        response = Mock(status_code=200, is_redirect=False)
+        response.json = Mock(side_effect=ValueError)
+
+        self.rslvr._session = Mock()
+        self.rslvr._session.get = Mock(return_value=response)
+        with self.assertRaises(RDAPResolutionException):
+            self.rslvr._get_raw_RDAP_JSON(self.TEST_URI)
+
+        # We only called requests' get() the once
+        self.assertEquals(
+            # We never allow requests to handle redirects
+            [call(self.TEST_URI, allow_redirects=False)],
+            self.rslvr._session.get.mock_calls
+        )
