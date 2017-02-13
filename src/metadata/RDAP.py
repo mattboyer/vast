@@ -60,6 +60,11 @@ class RDAP_Resolver(object):
                     "RDAP request returned {0}",
                     network_response.status_code
                 )
+        else:
+            raise RDAPResolutionException(
+                "Out of retries for RDAP resource: {0}",
+                rdap_url
+            )
 
         raw_json = None
         try:
