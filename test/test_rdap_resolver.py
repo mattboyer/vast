@@ -2,10 +2,10 @@ from mock import patch, Mock, call
 from unittest import TestCase
 
 from src.net.IPv4 import Address, Subnet
-from src.metadata.RDAP import RDAP_Resolver
-from src.metadata.resolver import DelegationResolver
+from src.metadata.RDAP import RDAP_Resolver, RDAPResolutionException
 
 class test_RDAP_resolver(TestCase):
+    TEST_URI = 'http://example.org/foo'
 
     def setUp(self):
         self._delegation_rslvr = Mock()
@@ -18,4 +18,29 @@ class test_RDAP_resolver(TestCase):
 
         self.rslvr._session = Mock()
         self.rslvr._session.get = Mock(return_value=response)
-        self.rslvr._get_raw_RDAP_JSON('http://example.org/foo')
+        redir_url, json = self.rslvr._get_raw_RDAP_JSON(self.TEST_URI)
+
+        self.assertIsNone(redir_url)
+        self.assertEquals(json, '{}')
+
+        # We only called requests' get() the once
+        self.assertEquals(
+            # We never allow requests to handle redirects
+            [call(self.TEST_URI, allow_redirects=False)],
+            self.rslvr._session.get.mock_calls
+        )
+
+    def test_raw_JSON_getter_404_on_first_try(self):
+        response = Mock(status_code=404, is_redirect=False)
+
+        self.rslvr._session = Mock()
+        self.rslvr._session.get = Mock(return_value=response)
+        with self.assertRaises(RDAPResolutionException):
+            self.rslvr._get_raw_RDAP_JSON(self.TEST_URI)
+
+        # We only called requests' get() the once
+        self.assertEquals(
+            # We never allow requests to handle redirects
+            [call(self.TEST_URI, allow_redirects=False)],
+            self.rslvr._session.get.mock_calls
+        )
