@@ -17,6 +17,7 @@ json_printer = pprint.PrettyPrinter()
 class RDAP_Resolver(object):
     GET_RETRIES = 10
     RATE_LIMITATION_RETRIES = 5
+    RATE_LIMITATION_DELAY = 61
 
     def __init__(self, ipv4_resolver):
         # TODO Use some sort of deque here
@@ -131,7 +132,7 @@ class RDAP_Resolver(object):
 
             except RateLimitationException as rate_lim_ex:
                 # Take five and try again
-                time.sleep(61)
+                time.sleep(self.RATE_LIMITATION_DELAY)
             except RDAPResolutionException as ex:
                 # We couldn't get meaningful JSON out of that URL
                 log.error(

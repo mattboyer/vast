@@ -431,9 +431,64 @@ class test_RDAP_resolver(TestCase):
         self.rslvr._session.get = Mock(return_value=response)
 
         with self.assertRaises(RDAPResolutionException) as malformed_ex:
-            assigned_subnet = self.rslvr.resolve_from_url(self.TEST_URI)
+            self.rslvr.resolve_from_url(self.TEST_URI)
         self.assertEquals(
             "Malformed RDAP. Missing attribute 'endAddress'",
             str(malformed_ex.exception),
         )
         self.assertIsNone(malformed_ex.exception.whois_host)
+
+    @patch('src.metadata.RDAP.time.sleep')
+    def test_resolve_from_url_rate_limitation_on_first_request(self, mock_sleep):
+        # Does anyone even use 429? https://http.cat/429
+        first_response = Mock(status_code=200, is_redirect=False)
+        first_response.json = Mock(return_value={
+            'notices': [{'title': 'something something rate limit something'}],
+        })
+        #
+        second_response = Mock(status_code=200, is_redirect=False)
+        second_response.json = Mock(return_value={
+            'startAddress': '10.0.0.0/32',
+            'endAddress': '10.255.255.255/32',
+            'name': 'foo',
+        })
+
+        self.rslvr._session = Mock()
+        self.rslvr._session.get = Mock(side_effect=[first_response, second_response])
+
+
+        assigned_subnet = self.rslvr.resolve_from_url(self.TEST_URI)
+
+        # All's well that ends well
+        expected_provisional_assigned_subnet = AssignedSubnet(
+            Address((10, 0, 0, 0)), 8, "foo"
+        )
+        self.assertEquals(expected_provisional_assigned_subnet, assigned_subnet)
+        self.assertEquals(
+            [call(self.rslvr.RATE_LIMITATION_DELAY)],
+            mock_sleep.mock_calls
+        )
+
+    @patch('src.metadata.RDAP.time.sleep')
+    def test_resolve_from_url_rate_limitation_out_of_retries(self, mock_sleep):
+        # Does anyone even use 429? https://http.cat/429
+        rate_lim_response = Mock(status_code=200, is_redirect=False)
+        rate_lim_response.json = Mock(return_value={
+            'notices': [{'title': 'something something rate limit something'}],
+        })
+
+        self.rslvr._session = Mock()
+        self.rslvr._session.get = Mock(side_effect=self.rslvr.RATE_LIMITATION_RETRIES * [rate_lim_response])
+
+
+        with self.assertRaises(RDAPResolutionException) as malformed_ex:
+            self.rslvr.resolve_from_url(self.TEST_URI)
+        self.assertEquals(
+            "Couldn't get around rate limitation for " + self.TEST_URI,
+            str(malformed_ex.exception),
+        )
+
+        self.assertEquals(
+            self.rslvr.RATE_LIMITATION_RETRIES * [call(self.rslvr.RATE_LIMITATION_DELAY)],
+            mock_sleep.mock_calls
+        )
