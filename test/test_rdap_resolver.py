@@ -8,6 +8,7 @@ from src.metadata.RDAP import RDAP_Resolver, RDAPResolutionException, RDAPRedire
 class test_RDAP_resolver(TestCase):
     TEST_URI = 'http://example.org/foo'
     TEST_REDIR_URI = 'http://example.com/foo'
+    TEST_WHOIS_HOST = 'whois.example.org'
 
     def setUp(self):
         self._delegation_rslvr = Mock()
@@ -345,7 +346,7 @@ class test_RDAP_resolver(TestCase):
         self.rslvr._session.get = Mock(return_value=redir_response)
 
         with self.assertRaises(RDAPRedirectException) as redir_ex:
-            assigned_subnet = self.rslvr.resolve_from_url(self.TEST_URI)
+            self.rslvr.resolve_from_url(self.TEST_URI)
         self.assertEquals(
             "Redirection to {0}. No provisional assignment for {1}".format(self.TEST_REDIR_URI, self.TEST_URI),
             str(redir_ex.exception)
@@ -369,7 +370,7 @@ class test_RDAP_resolver(TestCase):
             Address((10, 0, 0, 0)), 8, "foo"
         )
         with self.assertRaises(RDAPRedirectException) as redir_ex:
-            assigned_subnet = self.rslvr.resolve_from_url(self.TEST_URI)
+           self.rslvr.resolve_from_url(self.TEST_URI)
 
         self.assertEquals(
             expected_provisional_assigned_subnet,
@@ -401,3 +402,38 @@ class test_RDAP_resolver(TestCase):
         self.assertEquals(8, assigned_subnet._prefix_length)
 
         self.assertEquals(expected_provisional_assigned_subnet, assigned_subnet)
+
+    def test_resolve_from_url_dodgy_RDAP_with_whois(self):
+        response = Mock(status_code=200, is_redirect=False)
+        response.json = Mock(return_value={
+            'startAddress': '10.0.0.0/32',
+            'name': 'foo',
+            'port43': self.TEST_WHOIS_HOST,
+        })
+        self.rslvr._session = Mock()
+        self.rslvr._session.get = Mock(return_value=response)
+
+        with self.assertRaises(RDAPResolutionException) as malformed_ex:
+            assigned_subnet = self.rslvr.resolve_from_url(self.TEST_URI)
+        self.assertEquals(
+            "Malformed RDAP. Missing attribute 'endAddress'",
+            str(malformed_ex.exception),
+        )
+        self.assertEquals(self.TEST_WHOIS_HOST, malformed_ex.exception.whois_host)
+
+    def test_resolve_from_url_dodgy_RDAP_without_whois(self):
+        response = Mock(status_code=200, is_redirect=False)
+        response.json = Mock(return_value={
+            'startAddress': '10.0.0.0/32',
+            'name': 'foo',
+        })
+        self.rslvr._session = Mock()
+        self.rslvr._session.get = Mock(return_value=response)
+
+        with self.assertRaises(RDAPResolutionException) as malformed_ex:
+            assigned_subnet = self.rslvr.resolve_from_url(self.TEST_URI)
+        self.assertEquals(
+            "Malformed RDAP. Missing attribute 'endAddress'",
+            str(malformed_ex.exception),
+        )
+        self.assertIsNone(malformed_ex.exception.whois_host)

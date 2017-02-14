@@ -5,11 +5,13 @@ from ..net.IPv4 import Address
 from ..tools.logger import ModuleLogger
 from .assigned import AssignedSubnet
 
+import pprint
 import requests
 import time
 
 # TODO Do we ever get a 'name' attribute from afrinic?
 log = ModuleLogger(__name__)
+json_printer = pprint.PrettyPrinter()
 
 
 class RDAP_Resolver(object):
@@ -193,8 +195,7 @@ class RDAP_Resolver(object):
 
             return assigned
         except KeyError as ke:
-            import pprint
-            log.info(pprint.pprint(rdap_json))
+            log.debug("Malformed RDAP: %s", json_printer.pformat(rdap_json))
             raise RDAPResolutionException(
                 "Malformed RDAP. Missing attribute {0}",
                 str(ke),
