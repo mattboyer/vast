@@ -309,11 +309,16 @@ class test_RDAP_resolver(TestCase):
         self.rslvr._session = Mock()
         self.rslvr._session.get = Mock(return_value=response)
 
+        expected_provisional_assigned_subnet = AssignedSubnet(
+            Address((10, 0, 0, 0)), 8, "foo"
+        )
+
         assigned_subnet = self.rslvr.resolve_from_url(self.TEST_URI)
         self.assertTrue(isinstance(assigned_subnet, AssignedSubnet))
         self.assertEquals("foo", assigned_subnet.name)
         self.assertEquals(Address((10, 0, 0, 0)), assigned_subnet._network)
         self.assertEquals(8, assigned_subnet._prefix_length)
+        self.assertEquals(expected_provisional_assigned_subnet, assigned_subnet)
 
     def test_resolve_from_url_failure_no_redirection(self):
         response = Mock(status_code=500, is_redirect=False)
@@ -374,3 +379,25 @@ class test_RDAP_resolver(TestCase):
             "Redirection to {0}. Provisional assignment: {1}".format(self.TEST_REDIR_URI, repr(expected_provisional_assigned_subnet)),
             str(redir_ex.exception)
         )
+
+    def test_resolve_from_url_slash_thirty_two_addresses(self):
+        response = Mock(status_code=200, is_redirect=False)
+        response.json = Mock(return_value={
+            'startAddress': '10.0.0.0/32',
+            'endAddress': '10.255.255.255/32',
+            'name': 'foo',
+        })
+        self.rslvr._session = Mock()
+        self.rslvr._session.get = Mock(return_value=response)
+
+        expected_provisional_assigned_subnet = AssignedSubnet(
+            Address((10, 0, 0, 0)), 8, "foo"
+        )
+
+        assigned_subnet = self.rslvr.resolve_from_url(self.TEST_URI)
+        self.assertTrue(isinstance(assigned_subnet, AssignedSubnet))
+        self.assertEquals("foo", assigned_subnet.name)
+        self.assertEquals(Address((10, 0, 0, 0)), assigned_subnet._network)
+        self.assertEquals(8, assigned_subnet._prefix_length)
+
+        self.assertEquals(expected_provisional_assigned_subnet, assigned_subnet)
