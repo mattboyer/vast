@@ -2,6 +2,7 @@ from mock import patch, Mock, call
 from unittest import TestCase
 
 from src.net.IPv4 import Address, Subnet
+from src.metadata.assigned import AssignedSubnet
 from src.metadata.RDAP import RDAP_Resolver, RDAPResolutionException
 
 class test_RDAP_resolver(TestCase):
@@ -209,7 +210,7 @@ class test_RDAP_resolver(TestCase):
 
         self.rslvr._session = Mock()
         self.rslvr._session.get = Mock(
-            side_effect=10 * [bad_response]
+            side_effect=self.rslvr.GET_RETRIES * [bad_response]
         )
 
         with self.assertRaises(RDAPResolutionException) as ex:
@@ -221,7 +222,7 @@ class test_RDAP_resolver(TestCase):
 
         self.assertEquals(
             # We never allow requests to handle redirects
-            10 * [call(self.TEST_URI, allow_redirects=False),],
+            self.rslvr.GET_RETRIES * [call(self.TEST_URI, allow_redirects=False),],
             self.rslvr._session.get.mock_calls
         )
 
@@ -232,7 +233,7 @@ class test_RDAP_resolver(TestCase):
 
         self.rslvr._session = Mock()
         self.rslvr._session.get = Mock(
-            side_effect=10 * [bad_response]
+            side_effect=self.rslvr.GET_RETRIES * [bad_response]
         )
 
         with self.assertRaises(RDAPResolutionException) as ex:
@@ -244,7 +245,7 @@ class test_RDAP_resolver(TestCase):
 
         self.assertEquals(
             # We never allow requests to handle redirects
-            10 * [call(self.TEST_URI, allow_redirects=False),],
+            self.rslvr.GET_RETRIES * [call(self.TEST_URI, allow_redirects=False),],
             self.rslvr._session.get.mock_calls
         )
 
@@ -308,4 +309,21 @@ class test_RDAP_resolver(TestCase):
         self.rslvr._session = Mock()
         self.rslvr._session.get = Mock(return_value=response)
 
-        self.rslvr.resolve_from_url(self.TEST_URI)
+        assigned_subnet = self.rslvr.resolve_from_url(self.TEST_URI)
+        self.assertTrue(isinstance(assigned_subnet, AssignedSubnet))
+        self.assertEquals("foo", assigned_subnet.name)
+        self.assertEquals(Address((10, 0, 0, 0)), assigned_subnet._network)
+        self.assertEquals(8, assigned_subnet._prefix_length)
+
+    def test_resolve_from_url_failure_no_redirection(self):
+        response = Mock(status_code=500, is_redirect=False)
+        response.json = Mock(side_effect=ValueError)
+        self.rslvr._session = Mock()
+        self.rslvr._session.get = Mock(return_value=response)
+
+        with self.assertRaises(RDAPResolutionException) as ex:
+            self.rslvr.resolve_from_url(self.TEST_URI)
+        self.assertEquals(
+            "Out of retries for RDAP resource: " + self.TEST_URI,
+            str(ex.exception)
+        )

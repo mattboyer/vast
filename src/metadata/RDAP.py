@@ -13,6 +13,9 @@ log = ModuleLogger(__name__)
 
 
 class RDAP_Resolver(object):
+    GET_RETRIES = 10
+    RATE_LIMITATION_RETRIES = 5
+
     def __init__(self, ipv4_resolver):
         # TODO Use some sort of deque here
         self._resolver = ipv4_resolver
@@ -22,12 +25,16 @@ class RDAP_Resolver(object):
     def _get_raw_RDAP_JSON(self, rdap_url):
         '''
         Attempts to get a raw JSON object for a given RDAP URL.
+        This method is satisfied when a valid RDAP JSON object has been
+        retrieved for rdap_url.
+        This method doesn't follow redirection and is unaware of things
+        like RDAP notices indicating rate limitation violations.
         '''
-        # FIXME Redirection should not be handled here!!!
 
+        # FIXME Use exceptions to signal redirections!
         redirect_url = None
         req_count = 0
-        while req_count < 10:
+        while req_count < self.GET_RETRIES:
             network_response = self._session.get(
                 rdap_url,
                 allow_redirects=False,
@@ -93,7 +100,7 @@ class RDAP_Resolver(object):
 
     def resolve_from_url(self, rdap_url):
         rate_limitation_retries = 0
-        while rate_limitation_retries < 10:
+        while rate_limitation_retries < self.RATE_LIMITATION_RETRIES:
 
             try:
                 redirect, rdap_json = self._get_raw_RDAP_JSON(rdap_url)
@@ -112,9 +119,16 @@ class RDAP_Resolver(object):
                     # Notices are optional
                     pass
 
-            except RateLimitationException:
+            except RateLimitationException as rate_lim_ex:
                 # Take five and try again
                 time.sleep(61)
+            except RDAPResolutionException as ex:
+                # We couldn't get meaningful JSON out of that URL
+                log.error(
+                    'Failed to get a valid RDAP response for: %s',
+                    rdap_url
+                )
+                raise ex
             else:
                 break
 
