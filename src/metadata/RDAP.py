@@ -76,10 +76,16 @@ class RDAP_Resolver(object):
             )
 
         raw_json = None
+        # FIXME Really, we should raise an exception when redirection has been
+        # detected. Returning before we try to validate the body as JSON is a
+        # dirty workaround
         try:
             raw_json = network_response.json()
         except:
-            raise RDAPResolutionException("Malformed JSON in RDAP output")
+            if redirect_url:
+                return redirect_url, raw_json
+            else:
+                raise RDAPResolutionException("Malformed JSON in RDAP output")
         return redirect_url, raw_json
 
     def resolve(self, network):
@@ -104,6 +110,8 @@ class RDAP_Resolver(object):
 
             try:
                 redirect, rdap_json = self._get_raw_RDAP_JSON(rdap_url)
+                if redirect and not rdap_json:
+                    break
                 rate_limitation_retries += 1
 
                 try:
@@ -135,6 +143,19 @@ class RDAP_Resolver(object):
         else:
             raise RDAPResolutionException(
                 "Couldn't get around rate limitation for {0}", rdap_url
+            )
+
+        # We now have a valid RDAP JSON object and/or a redirect URL
+        # Let's enumerate the three cases:
+        # valid RDAP JSON	| no redirect
+        # valid RDAP JSON	| redirect URL
+        # no valid RDAP JSON| redirect URL
+        if not rdap_json:
+            raise RDAPRedirectException(
+                'Redirection to {0}. No provisional assignment for {1}',
+                redirect,
+                rdap_url,
+                redir_url=redirect,
             )
 
         whois_host = None

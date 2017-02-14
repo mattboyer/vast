@@ -3,7 +3,7 @@ from unittest import TestCase
 
 from src.net.IPv4 import Address, Subnet
 from src.metadata.assigned import AssignedSubnet
-from src.metadata.RDAP import RDAP_Resolver, RDAPResolutionException
+from src.metadata.RDAP import RDAP_Resolver, RDAPResolutionException, RDAPRedirectException
 
 class test_RDAP_resolver(TestCase):
     TEST_URI = 'http://example.org/foo'
@@ -326,4 +326,51 @@ class test_RDAP_resolver(TestCase):
         self.assertEquals(
             "Out of retries for RDAP resource: " + self.TEST_URI,
             str(ex.exception)
+        )
+
+    def test_resolve_from_url_empty_redirect_then_success(self):
+        # Here we're the testing the case where the initial URL yields a
+        # redirect URL and *no* valid RDAP JSON object for an assigned subnet
+        # i.e. the easy case where there's no need to decide which of several
+        # valid RDAP JSON objects is the one we want to trust.
+        redir_response = Mock(status_code=301, is_redirect=True)
+        redir_response.headers = {'Location': self.TEST_REDIR_URI}
+        redir_response.json = Mock(side_effect=ValueError)
+        self.rslvr._session = Mock()
+        self.rslvr._session.get = Mock(return_value=redir_response)
+
+        with self.assertRaises(RDAPRedirectException) as redir_ex:
+            assigned_subnet = self.rslvr.resolve_from_url(self.TEST_URI)
+        self.assertEquals(
+            "Redirection to {0}. No provisional assignment for {1}".format(self.TEST_REDIR_URI, self.TEST_URI),
+            str(redir_ex.exception)
+        )
+
+    def test_resolve_from_url_success_plus_redirect_then_success(self):
+        # Here we're the ambiguous case where the initial URL yields a redirect
+        # URL *as well as* a valid RDAP JSON object for an assigned subnet
+        # In this case, the caller will have to Do The Right Thing
+        redir_response = Mock(status_code=301, is_redirect=True)
+        redir_response.headers = {'Location': self.TEST_REDIR_URI}
+        redir_response.json = Mock(return_value={
+            'startAddress': '10.0.0.0',
+            'endAddress': '10.255.255.255',
+            'name': 'foo',
+        })
+        self.rslvr._session = Mock()
+        self.rslvr._session.get = Mock(return_value=redir_response)
+
+        expected_provisional_assigned_subnet = AssignedSubnet(
+            Address((10, 0, 0, 0)), 8, "foo"
+        )
+        with self.assertRaises(RDAPRedirectException) as redir_ex:
+            assigned_subnet = self.rslvr.resolve_from_url(self.TEST_URI)
+
+        self.assertEquals(
+            expected_provisional_assigned_subnet,
+            redir_ex.exception.provisional
+        )
+        self.assertEquals(
+            "Redirection to {0}. Provisional assignment: {1}".format(self.TEST_REDIR_URI, repr(expected_provisional_assigned_subnet)),
+            str(redir_ex.exception)
         )
