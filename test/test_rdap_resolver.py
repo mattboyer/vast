@@ -12,7 +12,7 @@ class test_RDAP_resolver(TestCase):
 
     def setUp(self):
         self._delegation_rslvr = Mock()
-        self._delegation_rslvr.get_top_level_assignment = Mock(return_value=23)
+        self._delegation_rslvr.get_top_level_assignment = Mock(return_value=42)
         self.rslvr = RDAP_Resolver(self._delegation_rslvr)
 
     def test_raw_JSON_getter_success_on_first_try(self):
@@ -492,3 +492,83 @@ class test_RDAP_resolver(TestCase):
             self.rslvr.RATE_LIMITATION_RETRIES * [call(self.rslvr.RATE_LIMITATION_DELAY)],
             mock_sleep.mock_calls
         )
+
+
+    def test_resolve_subnet_known_RDAP_url(self):
+        self._delegation_rslvr = Mock()
+        # This call returns an instance of TopLevelDelegation
+        self._delegation_rslvr.get_top_level_assignment = Mock(return_value=Mock(rdap_URLs=[self.TEST_URI]))
+        self.rslvr = RDAP_Resolver(self._delegation_rslvr)
+
+        response = Mock(status_code=200, is_redirect=False)
+        response.json = Mock(return_value={
+            'startAddress': '11.0.0.0',
+            'endAddress': '11.255.255.255',
+            'name': 'foo',
+        })
+        self.rslvr._session = Mock()
+        self.rslvr._session.get = Mock(return_value=response)
+
+        # It doesn't really matter what subnet this is
+        # What does matter is that we use its floor
+        eleven_dot = Subnet(Address('11.0.42.0'), 8)
+        assigned = self.rslvr.resolve(eleven_dot)
+
+        expected_assigned_subnet = AssignedSubnet(
+            Address((11, 0, 0, 0)), 8, "foo"
+        )
+        self.assertEquals(expected_assigned_subnet, assigned)
+
+        # We only called requests' get() the once
+        self.assertEquals(
+            # We never allow requests to handle redirects
+            [call(self.TEST_URI + '/ip/11.0.0.0', allow_redirects=False)],
+            self.rslvr._session.get.mock_calls
+        )
+
+    def test_resolve_subnet_no_RDAP_url(self):
+        self._delegation_rslvr = Mock()
+        # This call returns an instance of TopLevelDelegation
+        self._delegation_rslvr.get_top_level_assignment = Mock(return_value=Mock(rdap_URLs=[]))
+        self.rslvr = RDAP_Resolver(self._delegation_rslvr)
+
+        # It doesn't really matter what subnet this is
+        eleven_dot = Subnet(Address('11.0.42.0'), 8)
+        with self.assertRaises(RDAPResolutionException) as no_rdap_ex:
+            self.rslvr.resolve(eleven_dot)
+        self.assertEquals(
+            "No RDAP URL for "+repr(eleven_dot),
+            str(no_rdap_ex.exception),
+        )
+
+    def test_resolve_subnet_known_RDAP_url_has_trailing_slash(self):
+        self._delegation_rslvr = Mock()
+        # This call returns an instance of TopLevelDelegation
+        self._delegation_rslvr.get_top_level_assignment = Mock(return_value=Mock(rdap_URLs=[self.TEST_URI+'/']))
+        self.rslvr = RDAP_Resolver(self._delegation_rslvr)
+
+        response = Mock(status_code=200, is_redirect=False)
+        response.json = Mock(return_value={
+            'startAddress': '11.0.0.0',
+            'endAddress': '11.255.255.255',
+            'name': 'foo',
+        })
+        self.rslvr._session = Mock()
+        self.rslvr._session.get = Mock(return_value=response)
+
+        # It doesn't really matter what subnet this is
+        eleven_dot = Subnet(Address('11.0.0.0'), 8)
+        assigned = self.rslvr.resolve(eleven_dot)
+
+        expected_assigned_subnet = AssignedSubnet(
+            Address((11, 0, 0, 0)), 8, "foo"
+        )
+        self.assertEquals(expected_assigned_subnet, assigned)
+
+        # We only called requests' get() the once
+        self.assertEquals(
+            # We never allow requests to handle redirects
+            [call(self.TEST_URI + '/ip/11.0.0.0', allow_redirects=False)],
+            self.rslvr._session.get.mock_calls
+        )
+

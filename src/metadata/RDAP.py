@@ -98,7 +98,7 @@ class RDAP_Resolver(object):
             get_top_level_assignment(network_slash_eight)
 
         if not slash_eight_delegation.rdap_URLs:
-            raise RDAPResolutionException("No RDAP URL")
+            raise RDAPResolutionException("No RDAP URL for {0}", network)
 
         rdap_base_url = slash_eight_delegation.rdap_URLs[0]
         # We want to avoid double slashes
