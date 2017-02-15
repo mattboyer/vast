@@ -31,3 +31,14 @@ class test_stats_manager(TestCase):
 
         self.assertEquals(4, count)
         self.assertEquals(expected_distrib, lengths)
+
+    def test_coverage(self):
+        a = AssignedSubnet(Address('10.0.0.0'), 8, "foo")
+        b = AssignedSubnet(Address('11.0.0.0'), 9, "foo")
+        c = AssignedSubnet(Address('11.128.0.0'), 9, "foo")
+
+        self.mock_data_mgr.update_records((a, b, c))
+
+        total_coverage, coverage = self.stats_mgr.coverage()
+        self.assertEquals(33554432, total_coverage)
+        self.assertEquals('0.781', str(coverage))

@@ -1,4 +1,5 @@
 from . import Command, CLI_subcmd
+from ..metadata.orm import DataManager
 from ..metadata.stats import StatsManager
 from ..tools.logger import ModuleLogger
 

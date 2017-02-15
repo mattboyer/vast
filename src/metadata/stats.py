@@ -1,5 +1,3 @@
-from ..net.IPv4 import Address
-
 from collections import defaultdict
 from decimal import Decimal
 
@@ -27,7 +25,7 @@ class StatsManager(object):
     def coverage(self):
         contiguous_coverage = self.data_mgr.group_contiguous_subnets()
 
-        whole_unicast_address_space = int(Address("225.255.255.255")) + 1
+        whole_unicast_address_space = 1 << 32
         total_unicast_coverage = 0
 
         for contig_block in contiguous_coverage:
