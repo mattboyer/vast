@@ -1,4 +1,3 @@
-from ..metadata.orm import DataManager
 from ..net.IPv4 import Address
 
 from collections import defaultdict
@@ -9,10 +8,11 @@ from ..tools.logger import ModuleLogger
 log = ModuleLogger(__name__)
 
 
+# Technically, this is more of a processor
 class StatsManager(object):
 
-    def __init__(self):
-        self.data_mgr = DataManager()
+    def __init__(self, data_mgr):
+        self.data_mgr = data_mgr
 
     def distribution(self):
         prefix_lengths = defaultdict(int)

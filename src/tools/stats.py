@@ -13,9 +13,12 @@ class StatsCmd(Command):
 
     def __init__(self):
         self.stats = None
+        self.data_mgr = None
 
     def run(self, arg_ns):
-        self.stats = StatsManager()
+        self.data_mgr = DataManager()
+        self.stats = StatsManager(self.data_mgr)
+
         self._print_length_stats()
         self._print_coverage_stats()
 
