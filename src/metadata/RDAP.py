@@ -84,7 +84,7 @@ class RDAP_Resolver(object):
         # dirty workaround
         try:
             raw_json = network_response.json()
-        except:
+        except Exception:  # pylint:disable=W0703
             if redirect_url:
                 return redirect_url, raw_json
             else:
@@ -130,7 +130,7 @@ class RDAP_Resolver(object):
                     # Notices are optional
                     pass
 
-            except RateLimitationException as rate_lim_ex:
+            except RateLimitationException:
                 # Take five and try again
                 time.sleep(self.RATE_LIMITATION_DELAY)
             except RDAPResolutionException as ex:
@@ -161,6 +161,9 @@ class RDAP_Resolver(object):
                 redir_url=redirect,
             )
 
+        return self._assigned_subnet_from_RDAP(rdap_json, redirect=redirect)
+
+    def _assigned_subnet_from_RDAP(self, rdap_json, redirect=None):
         whois_host = None
         try:
             whois_host = rdap_json['port43']

@@ -370,7 +370,7 @@ class test_RDAP_resolver(TestCase):
             Address((10, 0, 0, 0)), 8, "foo"
         )
         with self.assertRaises(RDAPRedirectException) as redir_ex:
-           self.rslvr.resolve_from_url(self.TEST_URI)
+            self.rslvr.resolve_from_url(self.TEST_URI)
 
         self.assertEquals(
             expected_provisional_assigned_subnet,
