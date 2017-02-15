@@ -2,8 +2,6 @@ from . import Command, CLI_subcmd
 from ..metadata.stats import StatsManager
 from ..tools.logger import ModuleLogger
 
-from decimal import Decimal
-
 log = ModuleLogger(__name__)
 
 
