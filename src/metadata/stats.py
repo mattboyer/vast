@@ -7,7 +7,7 @@ log = ModuleLogger(__name__)
 
 
 # Technically, this is more of a processor
-class StatsManager(object):
+class StatsProcessor(object):
 
     def __init__(self, data_mgr):
         self.data_mgr = data_mgr

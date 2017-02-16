@@ -1,10 +1,7 @@
 from . import Command, CLI_subcmd
 from .. import PROJECT_NAME
-from ..tools.logger import ModuleLogger
 
 import pip
-
-log = ModuleLogger(__name__)
 
 
 @CLI_subcmd('version')

@@ -4,16 +4,16 @@ from unittest import TestCase
 from src.net.IPv4 import Address, Subnet
 from src.metadata.assigned import AssignedSubnet
 from src.metadata.orm import DataManager
-from src.metadata.stats import StatsManager
+from src.metadata.stats import StatsProcessor
 
-class test_stats_manager(TestCase):
+class test_stats_processor(TestCase):
 
     def setUp(self):
         # We need to set up a patch for the SQLITE_PATH module-level var
         sqlite_path = patch('src.metadata.orm.SQLITE_PATH', ':memory:')
         sqlite_path.start()
         self.mock_data_mgr = DataManager()
-        self.stats_mgr = StatsManager(self.mock_data_mgr)
+        self.stats_mgr = StatsProcessor(self.mock_data_mgr)
 
     def test_distrib(self):
         a = AssignedSubnet(Address('10.11.12.0'), 24, "foo")

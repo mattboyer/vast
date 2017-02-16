@@ -1,9 +1,6 @@
 from . import Command, CLI_subcmd
 from ..metadata.orm import DataManager
-from ..metadata.stats import StatsManager
-from ..tools.logger import ModuleLogger
-
-log = ModuleLogger(__name__)
+from ..metadata.stats import StatsProcessor
 
 
 @CLI_subcmd('stats')
@@ -18,7 +15,7 @@ class StatsCmd(Command):
 
     def run(self, arg_ns):
         self.data_mgr = DataManager()
-        self.stats = StatsManager(self.data_mgr)
+        self.stats = StatsProcessor(self.data_mgr)
 
         self._print_length_stats()
         self._print_coverage_stats()
