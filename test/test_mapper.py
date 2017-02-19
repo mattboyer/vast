@@ -52,6 +52,34 @@ class test_Mapper(TestCase):
             [s for s in self.mock_data_mgr.all_records().order_by(AssignedSubnet.mapped_network)],
         )
 
+
+    def test_not_contiguous_subnets(self):
+        start_address = Address((10, 0, 0, 0))
+        a = AssignedSubnet(Address("10.0.0.0"), 8, "alpha")
+        b = AssignedSubnet(Address("12.0.0.0"), 24, "bravo")
+        c = AssignedSubnet(Address("12.0.1.0"), 24, "charlie")
+
+        self._resolve_mock.side_effect = [
+            a, b, c, ResolutionException,
+        ]
+        self.mapper.scan_up(start_address)
+
+        # Have we got the subnets we expect?
+        self.assertEqual(
+            [
+                call(Subnet(Address("10.0.0.0"), 32)),
+                # No such luck for you!
+                call(Subnet(Address("11.0.0.0"), 32)),
+            ],
+            self._resolve_mock.mock_calls
+        )
+
+        # Are they saved to the DB?
+        self.assertEqual(
+            [a, ],
+            [s for s in self.mock_data_mgr.all_records().order_by(AssignedSubnet.mapped_network)],
+        )
+
     def test_scan_addr_not_in_subnet(self):
         start_address = Address((10, 0, 0, 0))
         a = AssignedSubnet(Address("11.0.0.0"), 8, "WTF?!")
