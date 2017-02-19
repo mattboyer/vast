@@ -269,7 +269,7 @@ class Subnet(object):
 
     def __contains__(self, other):
         if isinstance(other, Address):
-            return self.floor() < other and self.ceiling() >= other
+            return self.floor() <= other and self.ceiling() >= other
         elif isinstance(other, Subnet):
             return self.floor() <= other.floor() and \
                     self.ceiling() >= other.ceiling()

@@ -201,7 +201,7 @@ class test_IPv4_subnet(TestCase):
         self.assertIn(a, s)
 
         a=Address([192,168,42,0])
-        self.assertNotIn(a, s)
+        self.assertIn(a, s)
 
         a=Address([192,168,43,0])
         self.assertNotIn(a, s)
