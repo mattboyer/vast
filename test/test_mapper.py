@@ -51,3 +51,26 @@ class test_Mapper(TestCase):
             [a, b, c],
             [s for s in self.mock_data_mgr.all_records().order_by(AssignedSubnet.mapped_network)],
         )
+
+    def test_scan_addr_not_in_subnet(self):
+        start_address = Address((10, 0, 0, 0))
+        a = AssignedSubnet(Address("11.0.0.0"), 8, "WTF?!")
+
+        self._resolve_mock.side_effect = [
+            a,
+        ]
+        self.mapper.scan_up(start_address)
+
+        # Have we got the subnets we expect?
+        self.assertEqual(
+            [
+                call(Subnet(Address("10.0.0.0"), 32)),
+            ],
+            self._resolve_mock.mock_calls
+        )
+
+        # Are they saved to the DB?
+        self.assertEqual(
+            [],
+            [s for s in self.mock_data_mgr.all_records().order_by(AssignedSubnet.mapped_network)],
+        )
