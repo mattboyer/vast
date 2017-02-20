@@ -13,7 +13,7 @@ class TopLevelDelegation(object):
         start_address = Address(top_byte << 24)
         self.delegation_subnet = Subnet(start_address, 8)
 
-        self.rdap_URLs = []
+        self.rdap_URLs = set([])
         self.whois_host = None
 
     def __repr__(self):
@@ -57,7 +57,7 @@ def populate_IANA_IPv4_assignments():
                         'assignments:server',
                         constants.IANA_TOP_LEVEL_ALLOCATION_NS
                     ):
-                tld.rdap_URLs.append(rdap_server_element.text.rstrip('/'))
+                tld.rdap_URLs.add(rdap_server_element.text.rstrip('/'))
 
         whois_element = iana_record_element.find(
                 'assignments:whois', constants.IANA_TOP_LEVEL_ALLOCATION_NS)
