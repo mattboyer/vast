@@ -29,7 +29,7 @@ def populate_IANA_IPv4_assignments():
 
     iana_xml = requests.get(constants.IANA_TOP_LEVEL_ALLOCATION_URL)
     if not iana_xml.ok:
-        raise iana_xml.raise_for_status()
+        iana_xml.raise_for_status()
 
     registry_DOM = ET.fromstringlist(iana_xml.iter_lines())
     for iana_record_element in registry_DOM.findall(
@@ -37,13 +37,13 @@ def populate_IANA_IPv4_assignments():
         prefix_element = iana_record_element.find(
                 'assignments:prefix', constants.IANA_TOP_LEVEL_ALLOCATION_NS)
         if prefix_element is None:
-            raise Exception()
+            raise Exception
 
         slash_eight = prefix_element.text
         if not isinstance(slash_eight, str):
-            raise ValueError()
+            raise ValueError
         if not slash_eight.endswith('/8'):
-            raise ValueError()
+            raise ValueError
 
         top_byte = int(slash_eight[:-2])
         delegation_cidr = Subnet(Address((top_byte, 0, 0, 0)), 8)

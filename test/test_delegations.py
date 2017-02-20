@@ -124,3 +124,12 @@ regional areas of the world. RFC 1466 <xref type="rfc" data="rfc1466"/> document
             "whois.arin.net",
             assignments[Subnet(Address("3.0.0.0"), 8)].whois_host
         )
+
+    @patch('src.metadata.IANA_IPv4_assignments.requests.get')
+    def test_populate_http_failure(self, mock_get):
+        response = Mock(ok=False)
+        response.raise_for_status = Mock(side_effect=Exception)
+        mock_get.return_value = response
+
+        with self.assertRaises(Exception):
+            assignments = populate_IANA_IPv4_assignments()
