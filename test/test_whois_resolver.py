@@ -137,6 +137,45 @@ source:         RIPE
         )
 
     @patch('src.metadata.whois.Whois_Resolver.get_whois_entry')
+    def test_resolve_bullshit_continuations(self, mock_get_entry):
+        addr = Subnet(Address("45.0.0.0"), 8)
+        mock_get_entry.return_value = '''
+inetnum:        45.0.0.0 - 45.255.255.255
+inetnum:
+netname:        EU-ZZ-45
+netname:
+descr:          To determine the registration information for a more
+descr:          specific range, please try a more specific query.
+descr:          If you see this object as a result of a single IP query,
+descr:          it means the IP address is currently in the free pool of
+descr:          address space managed by the RIPE NCC.
+                Bullshit continuation
+country:        EU # Country is in fact world wide
+admin-c:        IANA1-RIPE
+tech-c:         IANA1-RIPE
+status:         ALLOCATED UNSPECIFIED
+mnt-by:         RIPE-NCC-HM-MNT
+created:        2014-05-21T08:19:20Z
+last-modified:  2015-09-23T13:18:33Z
+source:         RIPE
+        '''.strip()
+
+        assigned = self.rslvr.resolve(addr, self.WHOIS_HOST)
+        self.assertTrue(isinstance(assigned, AssignedSubnet))
+        self.assertEqual(
+            Address("45.0.0.0"),
+            assigned._network
+        )
+        self.assertEqual(
+            8,
+            assigned._prefix_length
+        )
+        self.assertEqual(
+            'EU-ZZ-45',
+            assigned._name
+        )
+
+    @patch('src.metadata.whois.Whois_Resolver.get_whois_entry')
     def test_resolve_no_inetnum(self, mock_get_entry):
         addr = Subnet(Address("45.0.0.0"), 8)
         mock_get_entry.return_value = '''
