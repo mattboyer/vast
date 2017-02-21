@@ -13,8 +13,8 @@ RPSL_ATTR_NOVALUE_RE = re.compile(r'^(\S+):$')
 
 log = ModuleLogger(__name__)
 
-# TODO Use whois-specific exceptions!!!
 
+# TODO Use whois-specific exceptions!!!
 # TODO Use whois:// URLs
 class Whois_Resolver(object):
 
