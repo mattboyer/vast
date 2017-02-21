@@ -4,6 +4,7 @@ from unittest import TestCase
 from src.net.IPv4 import Address, Subnet
 from src.metadata.assigned import AssignedSubnet
 from src.metadata.whois import Whois_Resolver
+from src.metadata import ResolutionException
 
 class test_whois_resolver(TestCase):
     WHOIS_HOST = 'whois.example.org'
@@ -63,3 +64,12 @@ class test_whois_resolver(TestCase):
             [call(Subnet(Address("10.0.0.0"), 8))],
             self._delegation_rslvr.get_top_level_assignment.mock_calls
         )
+
+    @patch('src.metadata.whois.Whois_Resolver.get_whois_entry')
+    def test_resolve_malformed_whois(self, mock_get_entry):
+        addr = Subnet(Address("10.0.0.0"), 8)
+        mock_get_entry.return_value = 'foo'
+
+        with self.assertRaises(ResolutionException) as ex:
+            assigned = self.rslvr.resolve(addr, self.WHOIS_HOST)
+        self.assertEquals("Malformed Whois entry: foo", str(ex.exception))
