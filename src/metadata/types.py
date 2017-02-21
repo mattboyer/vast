@@ -17,8 +17,5 @@ class SQLAddress(types.TypeDecorator):
     def process_result_value(self, value, dialect):
         return Address(value)
 
-    def process_literal_param(self, value, dialect):
-        raise Exception("WTF?!")
-
     def python_type(self):
         return Address
