@@ -30,12 +30,11 @@ class Whois_Resolver(object):
             slash_eight_delegation = self._resolver.\
                 get_top_level_assignment(network_slash_eight)
 
-            if not slash_eight_delegation.rdap_URLs:
-                raise ResolutionException("No RDAP URL")
-
             whois_host = slash_eight_delegation.whois_host
             if not whois_host:
-                raise ResolutionException
+                raise ResolutionException(
+                    "No whois host set on the top-level delegation"
+                )
 
         sockinfo = getaddrinfo(
             whois_host,

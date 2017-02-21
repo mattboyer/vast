@@ -12,7 +12,7 @@ class test_whois_resolver(TestCase):
     def setUp(self):
         self._delegation_rslvr = Mock()
         self._delegation_rslvr.get_top_level_assignment = Mock(
-            return_value=Mock(rdap_URLs={self.WHOIS_HOST}),
+            return_value=Mock(whois_host=self.WHOIS_HOST),
         )
         self.rslvr = Whois_Resolver(self._delegation_rslvr)
         self._name_resolution_patch = patch(
@@ -65,6 +65,16 @@ class test_whois_resolver(TestCase):
             self._delegation_rslvr.get_top_level_assignment.mock_calls
         )
 
+    def test_get_whois_entry_no_whois_supplied_no_whois_on_TLD(self):
+        self._delegation_rslvr.get_top_level_assignment = Mock(
+            return_value=Mock(whois_host=None),
+        )
+
+        addr = Subnet(Address("10.11.12.0"), 24)
+        with self.assertRaises(ResolutionException) as ex:
+            self.rslvr.get_whois_entry(addr)
+        self.assertEqual("No whois host set on the top-level delegation", str(ex.exception))
+
     @patch('src.metadata.whois.Whois_Resolver.get_whois_entry')
     def test_resolve_malformed_whois(self, mock_get_entry):
         addr = Subnet(Address("10.0.0.0"), 8)
@@ -72,7 +82,7 @@ class test_whois_resolver(TestCase):
 
         with self.assertRaises(ResolutionException) as ex:
             self.rslvr.resolve(addr, self.WHOIS_HOST)
-        self.assertEquals("Malformed Whois entry: foo", str(ex.exception))
+        self.assertEqual("Malformed Whois entry: foo", str(ex.exception))
 
     @patch('src.metadata.whois.Whois_Resolver.get_whois_entry')
     def test_resolve_well_formed_whois(self, mock_get_entry):
@@ -142,10 +152,10 @@ source:         RIPE
 
         with self.assertRaises(ResolutionException) as ex:
             self.rslvr.resolve(addr, self.WHOIS_HOST)
-        self.assertEquals("No inetnum in whois record", str(ex.exception))
+        self.assertEqual("No inetnum in whois record", str(ex.exception))
 
     @patch('src.metadata.whois.Whois_Resolver.get_whois_entry')
-    def test_resolve_no_inetnum(self, mock_get_entry):
+    def test_resolve_no_netname(self, mock_get_entry):
         addr = Subnet(Address("45.0.0.0"), 8)
         mock_get_entry.return_value = '''
 inetnum:        45.0.0.0 - 45.255.255.255
@@ -160,4 +170,4 @@ source:         RIPE
 
         with self.assertRaises(ResolutionException) as ex:
             self.rslvr.resolve(addr, self.WHOIS_HOST)
-        self.assertEquals("No netname in whois record", str(ex.exception))
+        self.assertEqual("No netname in whois record", str(ex.exception))
