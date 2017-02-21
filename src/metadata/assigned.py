@@ -1,5 +1,5 @@
 from ..net.IPv4 import Subnet
-from . import get_dec_base, DataException
+from . import get_dec_base
 from .types import SQLAddress
 from ..tools.logger import term
 
