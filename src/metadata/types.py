@@ -6,7 +6,7 @@ from ..tools.logger import ModuleLogger
 log = ModuleLogger(__name__)
 
 
-class SQLAddress(types.TypeDecorator):
+class SQLAddress(types.TypeDecorator):  # pylint:disable=W0223
     impl = types.Integer
 
     def process_bind_param(self, value, dialect):
@@ -16,6 +16,3 @@ class SQLAddress(types.TypeDecorator):
 
     def process_result_value(self, value, dialect):
         return Address(value)
-
-    def python_type(self):
-        return Address
