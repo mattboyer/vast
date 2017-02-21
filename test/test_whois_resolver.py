@@ -71,7 +71,7 @@ class test_whois_resolver(TestCase):
         mock_get_entry.return_value = 'foo'
 
         with self.assertRaises(ResolutionException) as ex:
-            assigned = self.rslvr.resolve(addr, self.WHOIS_HOST)
+            self.rslvr.resolve(addr, self.WHOIS_HOST)
         self.assertEquals("Malformed Whois entry: foo", str(ex.exception))
 
     @patch('src.metadata.whois.Whois_Resolver.get_whois_entry')
@@ -98,6 +98,7 @@ descr:          specific range, please try a more specific query.
 descr:          If you see this object as a result of a single IP query,
 descr:          it means the IP address is currently in the free pool of
 descr:          address space managed by the RIPE NCC.
+                Bullshit continuation
 country:        EU # Country is in fact world wide
 admin-c:        IANA1-RIPE
 tech-c:         IANA1-RIPE
@@ -124,3 +125,39 @@ source:         RIPE
             'EU-ZZ-45',
             assigned._name
         )
+
+    @patch('src.metadata.whois.Whois_Resolver.get_whois_entry')
+    def test_resolve_no_inetnum(self, mock_get_entry):
+        addr = Subnet(Address("45.0.0.0"), 8)
+        mock_get_entry.return_value = '''
+netname:        EU-ZZ-45
+descr:          To determine the registration information for a more
+descr:          specific range, please try a more specific query.
+descr:          If you see this object as a result of a single IP query,
+descr:          it means the IP address is currently in the free pool of
+descr:          address space managed by the RIPE NCC.
+                Bullshit continuation
+source:         RIPE
+        '''.strip()
+
+        with self.assertRaises(ResolutionException) as ex:
+            self.rslvr.resolve(addr, self.WHOIS_HOST)
+        self.assertEquals("No inetnum in whois record", str(ex.exception))
+
+    @patch('src.metadata.whois.Whois_Resolver.get_whois_entry')
+    def test_resolve_no_inetnum(self, mock_get_entry):
+        addr = Subnet(Address("45.0.0.0"), 8)
+        mock_get_entry.return_value = '''
+inetnum:        45.0.0.0 - 45.255.255.255
+descr:          To determine the registration information for a more
+descr:          specific range, please try a more specific query.
+descr:          If you see this object as a result of a single IP query,
+descr:          it means the IP address is currently in the free pool of
+descr:          address space managed by the RIPE NCC.
+                Bullshit continuation
+source:         RIPE
+        '''.strip()
+
+        with self.assertRaises(ResolutionException) as ex:
+            self.rslvr.resolve(addr, self.WHOIS_HOST)
+        self.assertEquals("No netname in whois record", str(ex.exception))

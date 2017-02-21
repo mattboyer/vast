@@ -89,10 +89,10 @@ class Whois_Resolver(object):
                 entry_pairs[attribute].append(matches.group(2))
 
         if not 1 == len(entry_pairs['inetnum']):
-            raise ResolutionException("TODO")
+            raise ResolutionException("No inetnum in whois record")
 
         if not 1 == len(entry_pairs['netname']):
-            raise ResolutionException("TODO")
+            raise ResolutionException("No netname in whois record")
         inet_range = entry_pairs['inetnum'].pop()
         start, end = [s.strip() for s in inet_range.split('-')]
 
