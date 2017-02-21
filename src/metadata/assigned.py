@@ -104,7 +104,7 @@ class AssignedSubnet(Subnet, sa_base):
     def name(self, value):
         # TODO Perform some sensible validation?
         if not len(value):
-            raise DataException(
+            raise ValueError(
                 "%s name can't be empty" % self.__class__.__name__
             )
         self._name = value
@@ -112,7 +112,7 @@ class AssignedSubnet(Subnet, sa_base):
     def __init__(self, *args):
         super(self.__class__, self).__init__(*args[:2])
         *_, name = args
-        self._name = name
+        self.name = name
         self._next = None
         self._prev = None
 

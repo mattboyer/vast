@@ -28,12 +28,12 @@ class test_AssignedSubnetResolver(TestCase):
         self.resolver = DelegationResolver()
 
     def test_subnet_is_whole_address_space(self):
-        whole_address_space = AssignedSubnet(Address('10.0.0.0'), 0)
+        whole_address_space = AssignedSubnet(Address('10.0.0.0'), 0, "foo")
         self.assertRaises(ResolutionException, self.resolver.validate_assignment, whole_address_space)
 
     def test_subnet_is_too_large(self):
         for prefix_len in range(1, 8):
-            very_large_subnet = AssignedSubnet(Address('10.0.0.0'), prefix_len)
+            very_large_subnet = AssignedSubnet(Address('10.0.0.0'), prefix_len, "foo")
             self.assertRaises(ResolutionException, self.resolver.validate_assignment, very_large_subnet)
 
     def _reserved_subnets(self, subnet):
