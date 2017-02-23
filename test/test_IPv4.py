@@ -13,6 +13,13 @@ class test_IPv4_Address(TestCase):
         with self.assertRaises(TypeError):
             Address()
 
+    def test_invalid_argument_type(self):
+        with self.assertRaises(TypeError) as ex:
+            Address(3.14)
+        self.assertEqual(
+            "Argument \"3.14\" of type \"float\" cannot be used to instantiate Address",str(ex.exception)
+        )
+
     def test_valid_byte_tuple_in_constructor(self):
         a = Address(self.unicast_bytes)
         self.assertTrue(isinstance(a, Address))
@@ -35,6 +42,11 @@ class test_IPv4_Address(TestCase):
         with self.assertRaises(ValueError) as ex:
             Address("1.2.3.4.5")
         self.assertEqual("Invalid IPv4 address: \"1.2.3.4.5\"", str(ex.exception))
+
+    def test_malformed_dotted_quad_str_in_constructor(self):
+        with self.assertRaises(ValueError) as ex:
+            Address("a.b.c.d")
+        self.assertEqual("Invalid IPv4 address: \"a.b.c.d\"", str(ex.exception))
 
     def test_valid_uint_in_constructor(self):
         a = Address(self.unicast_uint)
@@ -123,6 +135,18 @@ class test_IPv4_Address(TestCase):
         self.assertFalse(Address([1,2,3,2]) >= Address([1,2,3,3]))
         self.assertGreaterEqual(Address([1, 1, 1, 1]), Address(0))
         self.assertGreaterEqual(Address([255, 255, 255, 255]), Address(0))
+
+    def test_hashability(self):
+        a = Address("10.0.0.0")
+        b = Address("10.0.0.0")
+        c = Address("11.0.0.0")
+        self.assertEquals(hash(a), hash(b))
+        self.assertFalse(a is b)
+        s = set([a, b, c])
+
+        self.assertEqual(2, len(s))
+        self.assertEqual({a, c}, s)
+        self.assertEqual({b, c}, s)
 
 
 class test_IPv4_subnet(TestCase):

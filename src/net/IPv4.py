@@ -26,15 +26,12 @@ class Address(object):
                     "Argument \"{0}\" of type \"{1}\" cannot be used to "
                     "instantiate {2}".format(
                         arg,
-                        type(arg),
+                        type(arg).__name__,
                         self.__class__.__name__
                     )
                 )
 
     def _from_uint(self, address_uint):
-        if not isinstance(address_uint, int):
-            raise TypeError("The constructor expects a uint32")
-
         if not (address_uint >= 0 and address_uint <= (2**32 - 1)):
             raise ValueError("Invalid IPv4 address uint32")
 
