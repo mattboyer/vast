@@ -31,11 +31,21 @@ class test_IPv4_Address(TestCase):
         self.assertEqual("<IPv4 address: 192.168.1.1>", repr(a))
         self.assertEqual(self.unicast_uint, a._uint)
 
+    def test_invalid_dotted_quad_str_in_constructor(self):
+        with self.assertRaises(ValueError) as ex:
+            Address("1.2.3.4.5")
+        self.assertEqual("Invalid IPv4 address: \"1.2.3.4.5\"", str(ex.exception))
+
     def test_valid_uint_in_constructor(self):
         a = Address(self.unicast_uint)
         self.assertTrue(isinstance(a, Address))
         self.assertEqual("<IPv4 address: 192.168.1.1>", repr(a))
         self.assertEqual(self.unicast_uint, a._uint)
+
+    def test_invalid_uint_in_constructor(self):
+        with self.assertRaises(ValueError) as ex:
+            Address(-42)
+        self.assertEqual("Invalid IPv4 address uint32", str(ex.exception))
 
     def test_invalid_address_in_constructor(self):
         with self.assertRaises(ValueError):

@@ -52,7 +52,7 @@ class Address(object):
             byte_seq = [int(q) for q in split_quad]
         except Exception:
             raise ValueError(
-                "Invalid IPv4 address \"{0}\"".format(dotted_quad)
+                "Invalid IPv4 address: \"{0}\"".format(dotted_quad)
             )
 
         self._from_byte_seq(byte_seq)
