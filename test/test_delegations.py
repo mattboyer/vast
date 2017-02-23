@@ -133,3 +133,32 @@ regional areas of the world. RFC 1466 <xref type="rfc" data="rfc1466"/> document
 
         with self.assertRaises(Exception):
             assignments = populate_IANA_IPv4_assignments()
+
+    @patch('src.metadata.IANA_IPv4_assignments.requests.get')
+    def test_populate_with_broken_xml_no_prefix(self, mock_get):
+        no_prefix_xml = '''
+<?xml version='1.0' encoding='UTF-8'?>
+<?oxygen RNGSchema="ipv4-address-space.rng" type="xml"?>
+<registry xmlns="http://www.iana.org/assignments" id="ipv4-address-space">
+  <title>IANA IPv4 Address Space Registry</title>
+  <category>Internet Protocol version 4 (IPv4) Address Space</category>
+  <updated>2015-08-10</updated>
+  <xref type="rfc" data="rfc7249"/>
+  <record>
+    <designation>APNIC</designation>
+    <date>2010-01</date>
+    <whois>whois.apnic.net</whois>
+    <rdap>
+      <server>https://rdap.apnic.net/</server>
+    </rdap>
+    <status>ALLOCATED</status>
+  </record>
+</registry>
+        '''.strip()
+
+        response = Mock(ok=True)
+        response.iter_lines = lambda: no_prefix_xml.splitlines()
+        mock_get.return_value = response
+        with self.assertRaises(ValueError) as ex:
+            populate_IANA_IPv4_assignments()
+        self.assertEqual("Record does not have a prefix element", str(ex.exception))

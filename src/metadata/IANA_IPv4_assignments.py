@@ -37,13 +37,13 @@ def populate_IANA_IPv4_assignments():
         prefix_element = iana_record_element.find(
                 'assignments:prefix', constants.IANA_TOP_LEVEL_ALLOCATION_NS)
         if prefix_element is None:
-            raise Exception
+            raise ValueError("Record does not have a prefix element")
 
         slash_eight = prefix_element.text
-        if not isinstance(slash_eight, str):
-            raise ValueError
         if not slash_eight.endswith('/8'):
-            raise ValueError
+            raise ValueError(
+                "Malformed record prefix: {0}".format(slash_eight)
+            )
 
         top_byte = int(slash_eight[:-2])
         delegation_cidr = Subnet(Address((top_byte, 0, 0, 0)), 8)
