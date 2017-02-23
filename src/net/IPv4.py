@@ -157,19 +157,15 @@ class Subnet(object):
             self._from_start_and_end(arg1, arg2)
         else:
             raise TypeError(
-                "Arguments \"{0}\" of type \"{1}\" cannot be used to "
+                "Arguments \"{0}\" of types \"{1}\" cannot be used to "
                 "instantiate {2}".format(
                     str((arg1, arg2)),
-                    str((type(arg1), type(arg2))),
+                    str((type(arg1).__name__, type(arg2).__name__)),
                     Subnet.__name__
                 )
             )
 
     def _from_address_and_prefix_length(self, address, prefix_len):
-        if not (isinstance(prefix_len, int) and isinstance(address, Address)):
-            raise TypeError(
-                "The constructor expects an IPv4 address and a prefix length"
-            )
         if not (prefix_len <= 32 and prefix_len >= 0):
             raise ValueError("Prefix length has to be between 0 and 32")
 
@@ -182,10 +178,6 @@ class Subnet(object):
 
     def _from_start_and_end(self, network, broadcast):
         # start is the network address, end is the broadcast address
-        if not all(isinstance(a, Address) for a in (network, broadcast)):
-            raise TypeError(
-                "The constructor expects 2 IPv4 addresses"
-            )
         host_bits = int(network) ^ int(broadcast)
 
         prefix_len = 32

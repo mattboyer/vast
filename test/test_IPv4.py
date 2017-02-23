@@ -4,10 +4,9 @@ from src.net.IPv4 import Address, Subnet
 
 class test_IPv4_Address(TestCase):
 
-    def setUp(self):
-        self.unicast_str = '192.168.1.1'
-        self.unicast_bytes = (192, 168, 1, 1)
-        self.unicast_uint = 3232235777
+    unicast_str = '192.168.1.1'
+    unicast_bytes = (192, 168, 1, 1)
+    unicast_uint = 3232235777
 
     def test_no_argument(self):
         with self.assertRaises(TypeError):
@@ -168,9 +167,30 @@ class test_IPv4_Address(TestCase):
         self.assertEqual(Address("192.168.1.1"), a)
 
 class test_IPv4_subnet(TestCase):
+    net_address_bytes = (192, 168, 1, 1)
+    broadcast_address_bytes = (192, 168, 255, 255)
 
-    def test_subnet_constructor(self):
-        pass
+    def test_valid_address_and_prefix_constructor(self):
+        net = Address(self.net_address_bytes)
+        sub = Subnet(net, 24)
+        self.assertTrue(isinstance(sub, Subnet))
+
+    def test_valid_net_address_and_broadcast_constructor(self):
+        net = Address(self.net_address_bytes)
+        broadcast = Address(self.broadcast_address_bytes)
+
+        sub = Subnet(net, broadcast)
+        self.assertTrue(isinstance(sub, Subnet))
+        self.assertEqual(16, sub.prefix_length)
+
+    def test_invalid_arguments_constructor(self):
+        net = Address(self.net_address_bytes)
+        with self.assertRaises(TypeError) as ex:
+            sub = Subnet(net, "hello")
+        self.assertEqual(
+            "Arguments \"(<IPv4 address: 192.168.1.1>, 'hello')\" of types \"('Address', 'str')\" cannot be used to instantiate Subnet",
+            str(ex.exception)
+        )
 
     def test_repr(self):
         s = Subnet(Address([10,10,10,0]), 24)
