@@ -303,3 +303,14 @@ class test_AssignedSubnetResolver(TestCase):
         )
 
         self.assertTrue(resolved_assignment is eleven_dot_valid_subnet)
+
+    def test_no_delegation(self):
+        s = Subnet(Address("12.13.14.0"), 24)
+        with self.assertRaises(ResolutionException) as ex:
+            self.resolver.resolve(s)
+
+        slash_eight = s % 8
+        self.assertEqual(
+            "Couldn't find top-level delegation for {0}".format(repr(slash_eight)),
+            str(ex.exception)
+        )

@@ -79,4 +79,8 @@ class DelegationResolver(object):
         try:
             return self._iana_top_level[slash_eight]
         except KeyError:
-            raise ValueError("TODO")
+            raise ResolutionException(
+                "Couldn't find top-level delegation for {0}".format(
+                    slash_eight
+                )
+            )

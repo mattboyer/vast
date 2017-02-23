@@ -52,7 +52,7 @@ def populate_IANA_IPv4_assignments():
         rdap_element = iana_record_element.find(
                 'assignments:rdap', constants.IANA_TOP_LEVEL_ALLOCATION_NS)
 
-        if rdap_element:
+        if rdap_element is not None:
             for rdap_server_element in rdap_element.findall(
                         'assignments:server',
                         constants.IANA_TOP_LEVEL_ALLOCATION_NS
