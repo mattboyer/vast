@@ -148,6 +148,24 @@ class test_IPv4_Address(TestCase):
         self.assertEqual({a, c}, s)
         self.assertEqual({b, c}, s)
 
+    def test_add_valid_increment(self):
+        a = Address(self.unicast_str)
+        a += 4
+        self.assertEqual(Address("192.168.1.5"), a)
+
+    def test_add_invalid_increment(self):
+        a = Address(self.unicast_str)
+        with self.assertRaises(TypeError) as ex:
+            a += 4.5
+        self.assertEqual(Address("192.168.1.1"), a)
+        with self.assertRaises(TypeError) as ex:
+            a += "hello"
+        self.assertEqual(Address("192.168.1.1"), a)
+
+        with self.assertRaises(ValueError) as ex:
+            # That's a bit much
+            a += 10**12
+        self.assertEqual(Address("192.168.1.1"), a)
 
 class test_IPv4_subnet(TestCase):
 
@@ -267,3 +285,25 @@ class test_IPv4_subnet(TestCase):
         s=Subnet(a, 24)
         with self.assertRaises(TypeError):
             'foo' in s
+
+    def test_left_shift(self):
+        a=Address([192,168,42,0])
+        s=Subnet(a, 24)
+
+        expected = Subnet(a, 23)
+        self.assertEqual(expected, s << 1)
+
+        with self.assertRaises(ValueError) as ex:
+            s << 25
+        self.assertEqual("Prefix length has to be between 0 and 32", str(ex.exception))
+
+    def test_right_shift(self):
+        a=Address([192,168,42,0])
+        s=Subnet(a, 24)
+
+        expected = Subnet(a, 25)
+        self.assertEqual(expected, s >> 1)
+
+        with self.assertRaises(ValueError) as ex:
+            s >> 9
+        self.assertEqual("Prefix length has to be between 0 and 32", str(ex.exception))

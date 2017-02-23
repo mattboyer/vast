@@ -170,7 +170,7 @@ class Subnet(object):
             raise TypeError(
                 "The constructor expects an IPv4 address and a prefix length"
             )
-        if not prefix_len <= 32 and prefix_len >= 0:
+        if not (prefix_len <= 32 and prefix_len >= 0):
             raise ValueError("Prefix length has to be between 0 and 32")
 
         self._prefix_length = prefix_len
