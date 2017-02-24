@@ -27,13 +27,21 @@ class test_assigned_subnet(TestCase):
         self.assertTrue(isinstance(ass, AssignedSubnet))
         self.assertTrue(isinstance(ass, Subnet))
 
+    def test_exception_on_empty_name(self):
+        start_address = Address('10.0.0.0')
+        end_address = Address('10.255.255.255')
+        su = Subnet(start_address, 8)
+        with self.assertRaises(ValueError) as ex:
+            AssignedSubnet(start_address, end_address, '')
+
+        self.assertEqual("AssignedSubnet name can't be empty", str(ex.exception))
 
     # TODO What if there aren't enough arguments?
     def test_relationships(self):
 
-        subnet_a = AssignedSubnet(Address('10.0.0.0'), 8)
-        subnet_b = AssignedSubnet(Address('11.0.0.0'), 8)
-        subnet_c = AssignedSubnet(Address('12.0.0.0'), 8)
+        subnet_a = AssignedSubnet(Address('10.0.0.0'), 8, "alpha")
+        subnet_b = AssignedSubnet(Address('11.0.0.0'), 8, "beta")
+        subnet_c = AssignedSubnet(Address('12.0.0.0'), 8, "gamma")
         all_subs = (subnet_a, subnet_b, subnet_c)
 
         self.session.add_all(all_subs)

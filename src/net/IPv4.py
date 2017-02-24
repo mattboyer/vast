@@ -26,15 +26,12 @@ class Address(object):
                     "Argument \"{0}\" of type \"{1}\" cannot be used to "
                     "instantiate {2}".format(
                         arg,
-                        type(arg),
+                        type(arg).__name__,
                         self.__class__.__name__
                     )
                 )
 
     def _from_uint(self, address_uint):
-        if not isinstance(address_uint, int):
-            raise TypeError("The constructor expects a uint32")
-
         if not (address_uint >= 0 and address_uint <= (2**32 - 1)):
             raise ValueError("Invalid IPv4 address uint32")
 
@@ -52,7 +49,7 @@ class Address(object):
             byte_seq = [int(q) for q in split_quad]
         except Exception:
             raise ValueError(
-                "Invalid IPv4 address \"{0}\"".format(dotted_quad)
+                "Invalid IPv4 address: \"{0}\"".format(dotted_quad)
             )
 
         self._from_byte_seq(byte_seq)
@@ -160,20 +157,16 @@ class Subnet(object):
             self._from_start_and_end(arg1, arg2)
         else:
             raise TypeError(
-                "Arguments \"{0}\" of type \"{1}\" cannot be used to "
+                "Arguments \"{0}\" of types \"{1}\" cannot be used to "
                 "instantiate {2}".format(
                     str((arg1, arg2)),
-                    str((type(arg1), type(arg2))),
+                    str((type(arg1).__name__, type(arg2).__name__)),
                     Subnet.__name__
                 )
             )
 
     def _from_address_and_prefix_length(self, address, prefix_len):
-        if not (isinstance(prefix_len, int) and isinstance(address, Address)):
-            raise TypeError(
-                "The constructor expects an IPv4 address and a prefix length"
-            )
-        if not prefix_len <= 32 and prefix_len >= 0:
+        if not (prefix_len <= 32 and prefix_len >= 0):
             raise ValueError("Prefix length has to be between 0 and 32")
 
         self._prefix_length = prefix_len
@@ -185,10 +178,6 @@ class Subnet(object):
 
     def _from_start_and_end(self, network, broadcast):
         # start is the network address, end is the broadcast address
-        if not all(isinstance(a, Address) for a in (network, broadcast)):
-            raise TypeError(
-                "The constructor expects 2 IPv4 addresses"
-            )
         host_bits = int(network) ^ int(broadcast)
 
         prefix_len = 32
@@ -242,10 +231,9 @@ class Subnet(object):
 
     @staticmethod
     def _mask_uint32(mask_length):
-        # TODO Rewrite this with shift operations
-        mask = int()
-        for bit_idx in range(mask_length):
-            mask += 2**(31-bit_idx)
+        mask = 0xFFFFFFFF
+        mask = mask >> (32 - mask_length)
+        mask = mask << (32 - mask_length)
         return mask
 
     @property
@@ -269,7 +257,7 @@ class Subnet(object):
 
     def __contains__(self, other):
         if isinstance(other, Address):
-            return self.floor() < other and self.ceiling() >= other
+            return self.floor() <= other and self.ceiling() >= other
         elif isinstance(other, Subnet):
             return self.floor() <= other.floor() and \
                     self.ceiling() >= other.ceiling()

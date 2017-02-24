@@ -1,55 +1,38 @@
 from . import Command, CLI_subcmd
 from ..metadata.orm import DataManager
-from ..net.IPv4 import Address
-from ..tools.logger import ModuleLogger
-
-from collections import defaultdict
-from decimal import Decimal
-
-log = ModuleLogger(__name__)
+from ..metadata.stats import StatsProcessor
 
 
 @CLI_subcmd('stats')
 class StatsCmd(Command):
     '''
-    Produces coverage stats
+    Displays coverage stats
     '''
 
     def __init__(self):
+        self.stats = None
         self.data_mgr = None
 
     def run(self, arg_ns):
         self.data_mgr = DataManager()
-        self._length_stats()
-        self._coverage_stats()
+        self.stats = StatsProcessor(self.data_mgr)
 
-    def _length_stats(self):
-        prefix_lengths = defaultdict(int)
-        all_subs = self.data_mgr.all_records()
-        subnet_count = 0
-        for sub in all_subs:
-            prefix_lengths[sub.prefix_length] += 1
-            subnet_count += 1
+        self._print_length_stats()
+        self._print_coverage_stats()
 
-        log.info("%d assigned subnets", subnet_count)
+    def _print_length_stats(self):
+        subnet_count, prefix_lengths = self.stats.distribution()
+        print("{0} assigned subnets\n".format(subnet_count))
 
         length_distribution = sorted(prefix_lengths.keys(), reverse=True)
         for length in length_distribution:
-            log.info("/%d count:	%d", length, prefix_lengths[length])
+            print("/{0} count:       {1}".format(
+                length, prefix_lengths[length])
+            )
 
-    def _coverage_stats(self):
-        contiguous_coverage = self.data_mgr.group_contiguous_subnets()
-        whole_unicast_address_space = int(Address("225.255.255.255")) + 1
-        total_unicast_coverage = 0
-
-        for contig_block in contiguous_coverage:
-            contig_start = contig_block[0].floor()
-            contig_end = contig_block[-1].ceiling()
-            contig_length = sum(len(subnet) for subnet in contig_block)
-            total_unicast_coverage += contig_length
-            log.debug("%r → %r: %r", contig_start, contig_end, contig_length)
-
-        log.info("Total coverage: %d", total_unicast_coverage)
-        coverage = round(100 * (Decimal(total_unicast_coverage) /
-                                Decimal(whole_unicast_address_space)), 3)
-        log.info("Coverage: %s %%", coverage)
+    def _print_coverage_stats(self):
+        total_unicast_coverage, coverage = self.stats.coverage()
+        print("\nTotal coverage {0} IPv4 addresses".format(
+            total_unicast_coverage
+        ))
+        print("Coverage: {0}% of IPv4 addresses".format(coverage))

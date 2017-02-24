@@ -28,12 +28,12 @@ class test_AssignedSubnetResolver(TestCase):
         self.resolver = DelegationResolver()
 
     def test_subnet_is_whole_address_space(self):
-        whole_address_space = AssignedSubnet(Address('10.0.0.0'), 0)
+        whole_address_space = AssignedSubnet(Address('10.0.0.0'), 0, "foo")
         self.assertRaises(ResolutionException, self.resolver.validate_assignment, whole_address_space)
 
     def test_subnet_is_too_large(self):
         for prefix_len in range(1, 8):
-            very_large_subnet = AssignedSubnet(Address('10.0.0.0'), prefix_len)
+            very_large_subnet = AssignedSubnet(Address('10.0.0.0'), prefix_len, "foo")
             self.assertRaises(ResolutionException, self.resolver.validate_assignment, very_large_subnet)
 
     def _reserved_subnets(self, subnet):
@@ -303,3 +303,14 @@ class test_AssignedSubnetResolver(TestCase):
         )
 
         self.assertTrue(resolved_assignment is eleven_dot_valid_subnet)
+
+    def test_no_delegation(self):
+        s = Subnet(Address("12.13.14.0"), 24)
+        with self.assertRaises(ResolutionException) as ex:
+            self.resolver.resolve(s)
+
+        slash_eight = s % 8
+        self.assertEqual(
+            "Couldn't find top-level delegation for {0}".format(repr(slash_eight)),
+            str(ex.exception)
+        )

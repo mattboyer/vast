@@ -14,6 +14,7 @@ RPSL_ATTR_NOVALUE_RE = re.compile(r'^(\S+):$')
 log = ModuleLogger(__name__)
 
 
+# TODO Use whois-specific exceptions!!!
 # TODO Use whois:// URLs
 class Whois_Resolver(object):
 
@@ -29,12 +30,11 @@ class Whois_Resolver(object):
             slash_eight_delegation = self._resolver.\
                 get_top_level_assignment(network_slash_eight)
 
-            if not slash_eight_delegation.rdap_URLs:
-                raise ResolutionException("No RDAP URL")
-
             whois_host = slash_eight_delegation.whois_host
             if not whois_host:
-                raise ResolutionException
+                raise ResolutionException(
+                    "No whois host set on the top-level delegation"
+                )
 
         sockinfo = getaddrinfo(
             whois_host,
@@ -88,10 +88,10 @@ class Whois_Resolver(object):
                 entry_pairs[attribute].append(matches.group(2))
 
         if not 1 == len(entry_pairs['inetnum']):
-            raise ResolutionException("TODO")
+            raise ResolutionException("No inetnum in whois record")
 
         if not 1 == len(entry_pairs['netname']):
-            raise ResolutionException("TODO")
+            raise ResolutionException("No netname in whois record")
         inet_range = entry_pairs['inetnum'].pop()
         start, end = [s.strip() for s in inet_range.split('-')]
 

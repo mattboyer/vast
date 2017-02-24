@@ -100,7 +100,11 @@ class RDAP_Resolver(object):
         if not slash_eight_delegation.rdap_URLs:
             raise RDAPResolutionException("No RDAP URL for {0}", network)
 
-        rdap_base_url = slash_eight_delegation.rdap_URLs[0]
+        rdap_base_url = None
+        for rdap_base_url in slash_eight_delegation.rdap_URLs:
+            if rdap_base_url.startswith('http:'):
+                break
+
         # We want to avoid double slashes
         if rdap_base_url.endswith('/'):
             rdap_base_url = rdap_base_url[:-1]

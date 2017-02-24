@@ -4,14 +4,20 @@ from src.net.IPv4 import Address, Subnet
 
 class test_IPv4_Address(TestCase):
 
-    def setUp(self):
-        self.unicast_str = '192.168.1.1'
-        self.unicast_bytes = (192, 168, 1, 1)
-        self.unicast_uint = 3232235777
+    unicast_str = '192.168.1.1'
+    unicast_bytes = (192, 168, 1, 1)
+    unicast_uint = 3232235777
 
     def test_no_argument(self):
         with self.assertRaises(TypeError):
             Address()
+
+    def test_invalid_argument_type(self):
+        with self.assertRaises(TypeError) as ex:
+            Address(3.14)
+        self.assertEqual(
+            "Argument \"3.14\" of type \"float\" cannot be used to instantiate Address",str(ex.exception)
+        )
 
     def test_valid_byte_tuple_in_constructor(self):
         a = Address(self.unicast_bytes)
@@ -31,11 +37,26 @@ class test_IPv4_Address(TestCase):
         self.assertEqual("<IPv4 address: 192.168.1.1>", repr(a))
         self.assertEqual(self.unicast_uint, a._uint)
 
+    def test_invalid_dotted_quad_str_in_constructor(self):
+        with self.assertRaises(ValueError) as ex:
+            Address("1.2.3.4.5")
+        self.assertEqual("Invalid IPv4 address: \"1.2.3.4.5\"", str(ex.exception))
+
+    def test_malformed_dotted_quad_str_in_constructor(self):
+        with self.assertRaises(ValueError) as ex:
+            Address("a.b.c.d")
+        self.assertEqual("Invalid IPv4 address: \"a.b.c.d\"", str(ex.exception))
+
     def test_valid_uint_in_constructor(self):
         a = Address(self.unicast_uint)
         self.assertTrue(isinstance(a, Address))
         self.assertEqual("<IPv4 address: 192.168.1.1>", repr(a))
         self.assertEqual(self.unicast_uint, a._uint)
+
+    def test_invalid_uint_in_constructor(self):
+        with self.assertRaises(ValueError) as ex:
+            Address(-42)
+        self.assertEqual("Invalid IPv4 address uint32", str(ex.exception))
 
     def test_invalid_address_in_constructor(self):
         with self.assertRaises(ValueError):
@@ -114,11 +135,62 @@ class test_IPv4_Address(TestCase):
         self.assertGreaterEqual(Address([1, 1, 1, 1]), Address(0))
         self.assertGreaterEqual(Address([255, 255, 255, 255]), Address(0))
 
+    def test_hashability(self):
+        a = Address("10.0.0.0")
+        b = Address("10.0.0.0")
+        c = Address("11.0.0.0")
+        self.assertEquals(hash(a), hash(b))
+        self.assertFalse(a is b)
+        s = set([a, b, c])
+
+        self.assertEqual(2, len(s))
+        self.assertEqual({a, c}, s)
+        self.assertEqual({b, c}, s)
+
+    def test_add_valid_increment(self):
+        a = Address(self.unicast_str)
+        a += 4
+        self.assertEqual(Address("192.168.1.5"), a)
+
+    def test_add_invalid_increment(self):
+        a = Address(self.unicast_str)
+        with self.assertRaises(TypeError) as ex:
+            a += 4.5
+        self.assertEqual(Address("192.168.1.1"), a)
+        with self.assertRaises(TypeError) as ex:
+            a += "hello"
+        self.assertEqual(Address("192.168.1.1"), a)
+
+        with self.assertRaises(ValueError) as ex:
+            # That's a bit much
+            a += 10**12
+        self.assertEqual(Address("192.168.1.1"), a)
 
 class test_IPv4_subnet(TestCase):
+    net_address_bytes = (192, 168, 1, 1)
+    broadcast_address_bytes = (192, 168, 255, 255)
 
-    def test_subnet_constructor(self):
-        pass
+    def test_valid_address_and_prefix_constructor(self):
+        net = Address(self.net_address_bytes)
+        sub = Subnet(net, 24)
+        self.assertTrue(isinstance(sub, Subnet))
+
+    def test_valid_net_address_and_broadcast_constructor(self):
+        net = Address(self.net_address_bytes)
+        broadcast = Address(self.broadcast_address_bytes)
+
+        sub = Subnet(net, broadcast)
+        self.assertTrue(isinstance(sub, Subnet))
+        self.assertEqual(16, sub.prefix_length)
+
+    def test_invalid_arguments_constructor(self):
+        net = Address(self.net_address_bytes)
+        with self.assertRaises(TypeError) as ex:
+            sub = Subnet(net, "hello")
+        self.assertEqual(
+            "Arguments \"(<IPv4 address: 192.168.1.1>, 'hello')\" of types \"('Address', 'str')\" cannot be used to instantiate Subnet",
+            str(ex.exception)
+        )
 
     def test_repr(self):
         s = Subnet(Address([10,10,10,0]), 24)
@@ -201,7 +273,7 @@ class test_IPv4_subnet(TestCase):
         self.assertIn(a, s)
 
         a=Address([192,168,42,0])
-        self.assertNotIn(a, s)
+        self.assertIn(a, s)
 
         a=Address([192,168,43,0])
         self.assertNotIn(a, s)
@@ -233,3 +305,25 @@ class test_IPv4_subnet(TestCase):
         s=Subnet(a, 24)
         with self.assertRaises(TypeError):
             'foo' in s
+
+    def test_left_shift(self):
+        a=Address([192,168,42,0])
+        s=Subnet(a, 24)
+
+        expected = Subnet(a, 23)
+        self.assertEqual(expected, s << 1)
+
+        with self.assertRaises(ValueError) as ex:
+            s << 25
+        self.assertEqual("Prefix length has to be between 0 and 32", str(ex.exception))
+
+    def test_right_shift(self):
+        a=Address([192,168,42,0])
+        s=Subnet(a, 24)
+
+        expected = Subnet(a, 25)
+        self.assertEqual(expected, s >> 1)
+
+        with self.assertRaises(ValueError) as ex:
+            s >> 9
+        self.assertEqual("Prefix length has to be between 0 and 32", str(ex.exception))
