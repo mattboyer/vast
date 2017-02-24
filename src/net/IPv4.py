@@ -231,10 +231,9 @@ class Subnet(object):
 
     @staticmethod
     def _mask_uint32(mask_length):
-        # TODO Rewrite this with shift operations
-        mask = int()
-        for bit_idx in range(mask_length):
-            mask += 2**(31-bit_idx)
+        mask = 0xFFFFFFFF
+        mask = mask >> (32 - mask_length)
+        mask = mask << (32 - mask_length)
         return mask
 
     @property
