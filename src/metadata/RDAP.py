@@ -1,5 +1,6 @@
 from . import (
-    RDAPResolutionException, RateLimitationException, RDAPRedirectException
+    RDAPResolutionException, RateLimitationException,
+    RDAPRedirectException, RDAPRedirectionDetected
 )
 from ..net.IPv4 import Address
 from ..tools.logger import ModuleLogger
@@ -34,7 +35,6 @@ class RDAP_Resolver(object):
         like RDAP notices indicating rate limitation violations.
         '''
 
-        # FIXME Use exceptions to signal redirections!
         redirect_url = None
         req_count = 0
         while req_count < self.GET_RETRIES:
@@ -49,13 +49,12 @@ class RDAP_Resolver(object):
             )
 
             if network_response.is_redirect:
-                # Maybe we should keep track of the end address if it is
-                # present... just in case the redirection ends up being a wild
-                # goose chase
-                # XXX Also, what if this header doesn't exist?
-                redirect_url = network_response.headers['Location']
-                log.debug('RDAP redirect to %s', redirect_url)
-                break
+                redirect_url = network_response.headers.get('Location')
+                if redirect_url:
+                    log.debug('RDAP redirect to %s', redirect_url)
+                    break
+                else:
+                    raise RDAPResolutionException('RDAP redirect with no URI')
 
             if network_response.status_code == requests.codes['OK']:
                 break
@@ -79,17 +78,19 @@ class RDAP_Resolver(object):
             )
 
         raw_json = None
-        # FIXME Really, we should raise an exception when redirection has been
-        # detected. Returning before we try to validate the body as JSON is a
-        # dirty workaround
         try:
             raw_json = network_response.json()
         except Exception:  # pylint:disable=W0703
             if redirect_url:
-                return redirect_url, raw_json
+                raise RDAPRedirectionDetected(redir_url=redirect_url)
             else:
                 raise RDAPResolutionException("Malformed JSON in RDAP output")
-        return redirect_url, raw_json
+
+        if redirect_url:
+            raise RDAPRedirectionDetected(
+                redir_url=redirect_url, redir_json=raw_json
+            )
+        return raw_json
 
     def resolve(self, network):
         # Discovers inetnums contained within network
@@ -112,13 +113,20 @@ class RDAP_Resolver(object):
         return self.resolve_from_url(rdap_url)
 
     def resolve_from_url(self, rdap_url):
+        '''
+        Attempts to get return an AssignedSubnet object built using the RDAP
+        JSON output retrieved for a given RDAP URL.
+        This method doesn't follow redirection but is aware of rate limitation
+        violations.
+        '''
+
         rate_limitation_retries = 0
+        rdap_json = redirect = None
+
         while rate_limitation_retries < self.RATE_LIMITATION_RETRIES:
 
             try:
-                redirect, rdap_json = self._get_raw_RDAP_JSON(rdap_url)
-                if redirect and not rdap_json:
-                    break
+                rdap_json = self._get_raw_RDAP_JSON(rdap_url)
                 rate_limitation_retries += 1
 
                 try:
@@ -137,6 +145,27 @@ class RDAP_Resolver(object):
             except RateLimitationException:
                 # Take five and try again
                 time.sleep(self.RATE_LIMITATION_DELAY)
+
+            except RDAPRedirectionDetected as redir:
+                # We got an HTTP redirection. If we didn't get a RDAP JSON
+                # body, then we can raise a RDAPRedirectException to that
+                # effect.
+                if not redir.redir_json:
+                    raise RDAPRedirectException(
+                        'Redirection to {0}. No provisional assignment',
+                        redir.redir_url,
+                        rdap_url,
+                        redir_url=redir.redir_url,
+                    )
+
+                # If however a RDAP JSON body was retrieved, then we should try
+                # and build an AssignedSubnet out of it before we raise a
+                # RDAPRedirectException to the caller.
+                else:
+                    redirect = redir.redir_url
+                    rdap_json = redir.redir_json
+                    break
+
             except RDAPResolutionException as ex:
                 # We couldn't get meaningful JSON out of that URL
                 log.error(
@@ -152,19 +181,7 @@ class RDAP_Resolver(object):
                 "Couldn't get around rate limitation for {0}", rdap_url
             )
 
-        # We now have a valid RDAP JSON object and/or a redirect URL
-        # Let's enumerate the three cases:
-        # valid RDAP JSON	| no redirect
-        # valid RDAP JSON	| redirect URL
-        # no valid RDAP JSON| redirect URL
-        if not rdap_json:
-            raise RDAPRedirectException(
-                'Redirection to {0}. No provisional assignment for {1}',
-                redirect,
-                rdap_url,
-                redir_url=redirect,
-            )
-
+        # We now have a valid RDAP JSON object and maybe a redirect URL
         return self._assigned_subnet_from_RDAP(rdap_json, redirect=redirect)
 
     def _assigned_subnet_from_RDAP(self, rdap_json, redirect=None):

@@ -3,7 +3,10 @@ from unittest import TestCase
 
 from src.net.IPv4 import Address, Subnet
 from src.metadata.assigned import AssignedSubnet
-from src.metadata.RDAP import RDAP_Resolver, RDAPResolutionException, RDAPRedirectException
+from src.metadata.RDAP import (
+    RDAP_Resolver, RDAPResolutionException, RDAPRedirectException,
+    RDAPRedirectionDetected
+)
 
 class test_RDAP_resolver(TestCase):
     TEST_URI = 'http://example.org/foo'
@@ -21,9 +24,7 @@ class test_RDAP_resolver(TestCase):
 
         self.rslvr._session = Mock()
         self.rslvr._session.get = Mock(return_value=response)
-        redir_url, json = self.rslvr._get_raw_RDAP_JSON(self.TEST_URI)
-
-        self.assertIsNone(redir_url)
+        json = self.rslvr._get_raw_RDAP_JSON(self.TEST_URI)
         self.assertEquals(json, '{}')
 
         # We only called requests' get() the once
@@ -102,9 +103,7 @@ class test_RDAP_resolver(TestCase):
         self.rslvr._session.get = Mock(
             side_effect=[first_response, second_response]
         )
-        redir_url, json = self.rslvr._get_raw_RDAP_JSON(self.TEST_URI)
-
-        self.assertIsNone(redir_url)
+        json = self.rslvr._get_raw_RDAP_JSON(self.TEST_URI)
         self.assertEquals(json, '{}')
 
         # We only called requests' get() twice
@@ -215,7 +214,7 @@ class test_RDAP_resolver(TestCase):
         )
 
         with self.assertRaises(RDAPResolutionException) as ex:
-            redir_url, json = self.rslvr._get_raw_RDAP_JSON(self.TEST_URI)
+            self.rslvr._get_raw_RDAP_JSON(self.TEST_URI)
         self.assertEquals(
                 "Out of retries for RDAP resource: " + self.TEST_URI,
             str(ex.exception)
@@ -238,7 +237,7 @@ class test_RDAP_resolver(TestCase):
         )
 
         with self.assertRaises(RDAPResolutionException) as ex:
-            redir_url, json = self.rslvr._get_raw_RDAP_JSON(self.TEST_URI)
+            self.rslvr._get_raw_RDAP_JSON(self.TEST_URI)
         self.assertEquals(
             "Out of retries for RDAP resource: " + self.TEST_URI,
             str(ex.exception)
@@ -250,6 +249,26 @@ class test_RDAP_resolver(TestCase):
             self.rslvr._session.get.mock_calls
         )
 
+    def test_raw_JSON_getter_redirect_with_no_uri(self):
+        response = Mock(status_code=200, is_redirect=True)
+        response.headers = {}
+        response.json = Mock(return_value='{}')
+
+        self.rslvr._session = Mock()
+        self.rslvr._session.get = Mock(return_value=response)
+
+        with self.assertRaises(RDAPResolutionException) as ex:
+            self.rslvr._get_raw_RDAP_JSON(self.TEST_URI)
+
+        self.assertEquals("RDAP redirect with no URI", str(ex.exception))
+
+        # We only called requests' get() the once
+        self.assertEquals(
+            # We never allow requests to handle redirects
+            [call(self.TEST_URI, allow_redirects=False)],
+            self.rslvr._session.get.mock_calls
+        )
+
     def test_raw_JSON_getter_redirect_on_first_try(self):
         response = Mock(status_code=200, is_redirect=True)
         response.headers = {'Location': self.TEST_REDIR_URI}
@@ -257,10 +276,12 @@ class test_RDAP_resolver(TestCase):
 
         self.rslvr._session = Mock()
         self.rslvr._session.get = Mock(return_value=response)
-        redir_url, json = self.rslvr._get_raw_RDAP_JSON(self.TEST_URI)
 
-        self.assertEquals(self.TEST_REDIR_URI, redir_url)
-        self.assertEquals(json, '{}')
+        with self.assertRaises(RDAPRedirectionDetected) as ex:
+            self.rslvr._get_raw_RDAP_JSON(self.TEST_URI)
+
+        self.assertEquals(self.TEST_REDIR_URI, ex.exception.redir_url)
+        self.assertEquals('{}', ex.exception.redir_json)
 
         # We only called requests' get() the once
         self.assertEquals(
@@ -282,10 +303,11 @@ class test_RDAP_resolver(TestCase):
             side_effect=[first_response, second_response]
         )
 
-        redir_url, json = self.rslvr._get_raw_RDAP_JSON(self.TEST_URI)
+        with self.assertRaises(RDAPRedirectionDetected) as ex:
+            self.rslvr._get_raw_RDAP_JSON(self.TEST_URI)
 
-        self.assertEquals(self.TEST_REDIR_URI, redir_url)
-        self.assertEquals(json, '{}')
+        self.assertEquals(self.TEST_REDIR_URI, ex.exception.redir_url)
+        self.assertEquals('{}', ex.exception.redir_json)
 
         # We only called requests' get() the once
         self.assertEquals(
@@ -334,7 +356,7 @@ class test_RDAP_resolver(TestCase):
             str(ex.exception)
         )
 
-    def test_resolve_from_url_empty_redirect_then_success(self):
+    def test_resolve_from_url_empty_redirect(self):
         # Here we're the testing the case where the initial URL yields a
         # redirect URL and *no* valid RDAP JSON object for an assigned subnet
         # i.e. the easy case where there's no need to decide which of several
@@ -348,11 +370,11 @@ class test_RDAP_resolver(TestCase):
         with self.assertRaises(RDAPRedirectException) as redir_ex:
             self.rslvr.resolve_from_url(self.TEST_URI)
         self.assertEquals(
-            "Redirection to {0}. No provisional assignment for {1}".format(self.TEST_REDIR_URI, self.TEST_URI),
+            "Redirection to {0}. No provisional assignment".format(self.TEST_REDIR_URI),
             str(redir_ex.exception)
         )
 
-    def test_resolve_from_url_success_plus_redirect_then_success(self):
+    def test_resolve_from_url_success_plus_redirect(self):
         # Here we're the ambiguous case where the initial URL yields a redirect
         # URL *as well as* a valid RDAP JSON object for an assigned subnet
         # In this case, the caller will have to Do The Right Thing
