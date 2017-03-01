@@ -35,7 +35,6 @@ class RDAP_Resolver(object):
         like RDAP notices indicating rate limitation violations.
         '''
 
-        # FIXME Use exceptions to signal redirections!
         redirect_url = None
         req_count = 0
         while req_count < self.GET_RETRIES:
