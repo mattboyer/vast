@@ -34,6 +34,13 @@ class RDAPRedirectException(ResolutionException):
         self.redir_url = redir_url
 
 
+class RDAPRedirectionDetected(ResolutionException):
+    def __init__(self, redir_url=None, redir_json=None):
+        super().__init__("HTTP Redirection detected while fetching RDAP JSON")
+        self.redir_url = redir_url
+        self.redir_json = redir_json
+
+
 class RateLimitationException(ResolutionException):
     pass
 
