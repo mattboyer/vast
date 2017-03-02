@@ -43,9 +43,10 @@ class DataManager(object):
         '''
         Creates/updates a record for an assigned subnet, but doesn't commit
         '''
-        # XXX Why is it we don't need to call begin()??
-        # self._sa_session.begin()
-
+        # There is no need to explicitly begin() a transaction. Since we do not
+        # use either autocommit=True or transaction nesting, the session is
+        # always implicitly in a transaction. See also:
+        # http://stackoverflow.com/a/7481826
         existing_records = self._sa_session.query(AssignedSubnet).filter_by(
             _network=assigned_subnet.network,
             _prefix_length=assigned_subnet.prefix_length,

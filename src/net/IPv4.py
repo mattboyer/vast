@@ -244,9 +244,6 @@ class Subnet(object):
     def prefix_length(self):
         return self._prefix_length
 
-    # XXX Is this useful???
-    # And if so, do we need to return a new instance or can we reuse
-    # self._network?
     def floor(self):
         return Address(int(self._network))
 
