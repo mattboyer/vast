@@ -141,7 +141,6 @@ class Address(object):
         return "<IPv4 address: {0}>".format(self)
 
 
-# TODO Consistently use the term "prefix length"
 class Subnet(object):
     '''Models a CIDR IPv4 subnet.'''
 
@@ -165,38 +164,37 @@ class Subnet(object):
                 )
             )
 
-    def _from_address_and_prefix_length(self, address, prefix_len):
-        if not (prefix_len <= 32 and prefix_len >= 0):
+    def _from_address_and_prefix_length(self, address, prefix_length):
+        if not (prefix_length <= 32 and prefix_length >= 0):
             raise ValueError("Prefix length has to be between 0 and 32")
 
-        self._prefix_length = prefix_len
+        self._prefix_length = prefix_length
 
         network_address = Address(address)
-        mask = ~((2 ** (32 - prefix_len)) - 1)
-        network_address &= mask
+        network_address &= Subnet._mask_uint32(prefix_length)
         self._network = network_address
 
     def _from_start_and_end(self, network, broadcast):
         # start is the network address, end is the broadcast address
         host_bits = int(network) ^ int(broadcast)
 
-        prefix_len = 32
+        prefix_length = 32
         while host_bits:
             host_bits >>= 1
-            prefix_len -= 1
+            prefix_length -= 1
 
-        self._from_address_and_prefix_length(network, prefix_len)
+        self._from_address_and_prefix_length(network, prefix_length)
 
-    def __rshift__(self, mask_decrement):
-        rval = Subnet(self._network, self._prefix_length + mask_decrement)
+    def __rshift__(self, prefix_increment):
+        rval = Subnet(self._network, self._prefix_length + prefix_increment)
         return rval
 
-    def __lshift__(self, mask_decrement):
-        rval = Subnet(self._network, self._prefix_length - mask_decrement)
+    def __lshift__(self, prefix_decrement):
+        rval = Subnet(self._network, self._prefix_length - prefix_decrement)
         return rval
 
-    def __mod__(self, new_mask):
-        rval = Subnet(self._network, new_mask)
+    def __mod__(self, new_prefix_length):
+        rval = Subnet(self._network, new_prefix_length)
         return rval
 
     def __eq__(self, other):
@@ -226,7 +224,8 @@ class Subnet(object):
         # broadcast address
         return 2 ** (32 - self._prefix_length)
 
-    def mask_uint32(self):
+    @property
+    def netmask(self):
         return Subnet._mask_uint32(self._prefix_length)
 
     @staticmethod
@@ -249,7 +248,7 @@ class Subnet(object):
 
     def ceiling(self):
         return Address(
-            int(self._network) | (self.mask_uint32() ^ (2**32-1))
+            int(self._network) | (self.netmask ^ 0xFFFFFFFF)
         )
 
     def __contains__(self, other):

@@ -235,13 +235,13 @@ class test_IPv4_subnet(TestCase):
 
     def test_mask(self):
         s=Subnet(Address([192, 168, 42, 0]), 1)
-        self.assertEqual(s.mask_uint32(), 2147483648)
+        self.assertEqual(s.netmask, 2147483648)
 
         s=Subnet(Address([192, 168, 42, 0]), 2)
-        self.assertEqual(s.mask_uint32(), 3221225472)
+        self.assertEqual(s.netmask, 3221225472)
 
         s=Subnet(Address([192, 168, 42, 0]), 32)
-        self.assertEqual(s.mask_uint32(), 4294967295)
+        self.assertEqual(s.netmask, 4294967295)
 
     def test_floor(self):
         network_address = Address([192, 168, 42, 0])
