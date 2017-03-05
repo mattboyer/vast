@@ -113,8 +113,6 @@ class AssignedSubnet(Subnet, sa_base):
         super(self.__class__, self).__init__(*args[:2])
         *_, name = args
         self.name = name
-        self._next = None
-        self._prev = None
 
     def __repr__(self):
         return ("<IPv4 assignment: {t.bold}{0}{t.normal}/{t.green}{1}"
