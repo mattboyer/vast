@@ -50,10 +50,6 @@ class AssignedSubnet(Subnet, sa_base):
         return Column(Integer, ForeignKey(cls.id))
 
     @declared_attr
-    def previous_subnet_id(cls):  # pylint:disable=E0213
-        return Column(Integer, ForeignKey(cls.id))
-
-    @declared_attr
     def parent_subnet_id(cls):  # pylint:disable=E0213
         return Column(Integer, ForeignKey(cls.id))
 
@@ -65,18 +61,16 @@ class AssignedSubnet(Subnet, sa_base):
             remote_side=cls.next_subnet_id,
             primaryjoin=foreign(cls.next_subnet_id) == remote(cls.id),
             post_update=True,
+            backref=backref(
+                "previous",
+                uselist=False,
+            ),
         )
 
-    @declared_attr
-    def previous(cls):  # pylint:disable=E0213
-        return relationship(
-            cls,
-            uselist=False,
-            remote_side=cls.previous_subnet_id,
-            primaryjoin=foreign(cls.previous_subnet_id) == remote(cls.id),
-            post_update=True,
-        )
-
+    # Let's see if I can get a sensible backref to work for parent in such a
+    # way that : A) adding an AssignedSubnet to a given object's list of
+    # children populates its parent_subnet_id B) setting an AssignedSubnet's
+    # parent adds that object to the parent's children list
     @declared_attr
     def parent(cls):  # pylint:disable=E0213
         return relationship(
@@ -87,11 +81,6 @@ class AssignedSubnet(Subnet, sa_base):
             post_update=True,
             backref=backref("children", uselist=True),
         )
-
-    # TODO Use a hybrid property setter?
-    def set_next(self, next_subnet):
-        setattr(self, 'next', next_subnet)
-        next_subnet.previous = self
 
     @property
     def name(self):

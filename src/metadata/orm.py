@@ -59,7 +59,9 @@ class DataManager(object):
             log.debug('Updating existing record for %r', assigned_subnet)
             old_record.name = assigned_subnet.name
             if assigned_subnet.next:
-                old_record.set_next(assigned_subnet.next)
+                old_record.next = assigned_subnet.next
+            if assigned_subnet.previous:
+                old_record.previous = assigned_subnet.previous
             if assigned_subnet.parent:
                 old_record.parent = assigned_subnet.parent
 

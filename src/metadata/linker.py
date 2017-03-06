@@ -32,8 +32,8 @@ class SubnetLinker(object):
         container_subnet_iter = self.data_mgr.query(
             AssignedSubnet,
         ).filter(
-            AssignedSubnet.next_subnet_id == null(),
-            AssignedSubnet.previous_subnet_id == null(),
+            AssignedSubnet.next == None,  # noqa
+            AssignedSubnet.previous == None,  # noqa
         ).order_by(
             AssignedSubnet.mapped_prefix_length
         )
