@@ -5,7 +5,7 @@ from ..tools.logger import term
 
 from sqlalchemy import Column, Unicode, SmallInteger, Integer
 from sqlalchemy import UniqueConstraint, ForeignKey
-from sqlalchemy.orm import relationship, remote, foreign, synonym
+from sqlalchemy.orm import relationship, remote, foreign, synonym, backref
 from sqlalchemy.ext.declarative import declared_attr
 
 
@@ -85,16 +85,13 @@ class AssignedSubnet(Subnet, sa_base):
             remote_side=cls.parent_subnet_id,
             primaryjoin=foreign(cls.parent_subnet_id) == remote(cls.id),
             post_update=True,
+            backref=backref("children", uselist=True),
         )
 
     # TODO Use a hybrid property setter?
     def set_next(self, next_subnet):
         setattr(self, 'next', next_subnet)
         next_subnet.previous = self
-
-    # TODO Use a hybrid property setter?
-    def set_parent(self, parent_subnet):
-        setattr(self, 'parent', parent_subnet)
 
     @property
     def name(self):

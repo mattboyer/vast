@@ -61,7 +61,7 @@ class DataManager(object):
             if assigned_subnet.next:
                 old_record.set_next(assigned_subnet.next)
             if assigned_subnet.parent:
-                old_record.set_parent(assigned_subnet.parent)
+                old_record.parent = assigned_subnet.parent
 
     def all_records(self):
         # Use a baked query?
