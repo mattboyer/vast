@@ -1,8 +1,6 @@
 from ..metadata.assigned import AssignedSubnet
 from ..tools.logger import ModuleLogger
 
-from sqlalchemy import null
-
 log = ModuleLogger(__name__)
 
 

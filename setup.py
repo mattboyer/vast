@@ -27,6 +27,7 @@ def package_names():
     return [PROJECT_NAME] + \
         [PROJECT_NAME + '.' + package for package in find_packages('src')]
 
+
 setup(
     cmdclass={
         'sdist': SdistAndClean,

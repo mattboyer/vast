@@ -593,4 +593,3 @@ class test_RDAP_resolver(TestCase):
             [call(self.TEST_URI + '/ip/11.0.0.0', allow_redirects=False)],
             self.rslvr._session.get.mock_calls
         )
-

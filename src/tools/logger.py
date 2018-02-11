@@ -44,6 +44,7 @@ class FormattingStringHandler(logging.StreamHandler):
 
         super().emit(record)
 
+
 console_handler = FormattingStringHandler(stream=sys.stdout)
 
 _app_console_format = ''.join((

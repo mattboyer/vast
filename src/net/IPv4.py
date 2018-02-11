@@ -127,7 +127,7 @@ class Address(object):
     def __add__(self, increment):
         try:
             return Address(self._uint + increment)
-        except:
+        except Exception:
             raise
 
     def __and__(self, mask_bytes):
