@@ -3,7 +3,7 @@ from sqlalchemy.ext.declarative import declarative_base
 base = None
 
 
-# TODO Turn this into a property or something
+# TODO Use Django models instead
 def get_dec_base():
     global base  # pylint:disable=W0603
     if base is None:
