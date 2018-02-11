@@ -8,7 +8,7 @@ PROJECT_NAME = to_filename(safe_name(PROJECT_NAME))
 
 PROJECT_DESCRIPTION = 'lorem ipsum'
 
-# TODO Take the env into account and/or a conf file
+# TODO Use Django settings instead
 SQLITE_PATH = os.path.join(
     xdg.BaseDirectory.save_data_path(PROJECT_NAME),
     PROJECT_NAME + '.sqlite'

@@ -5,7 +5,7 @@ from ..tools.logger import term
 
 from sqlalchemy import Column, Unicode, SmallInteger, Integer
 from sqlalchemy import UniqueConstraint, ForeignKey
-from sqlalchemy.orm import relationship, remote, foreign, synonym
+from sqlalchemy.orm import relationship, remote, foreign, synonym, backref
 from sqlalchemy.ext.declarative import declared_attr
 
 
@@ -50,10 +50,6 @@ class AssignedSubnet(Subnet, sa_base):
         return Column(Integer, ForeignKey(cls.id))
 
     @declared_attr
-    def previous_subnet_id(cls):  # pylint:disable=E0213
-        return Column(Integer, ForeignKey(cls.id))
-
-    @declared_attr
     def parent_subnet_id(cls):  # pylint:disable=E0213
         return Column(Integer, ForeignKey(cls.id))
 
@@ -65,18 +61,16 @@ class AssignedSubnet(Subnet, sa_base):
             remote_side=cls.next_subnet_id,
             primaryjoin=foreign(cls.next_subnet_id) == remote(cls.id),
             post_update=True,
+            backref=backref(
+                "previous",
+                uselist=False,
+            ),
         )
 
-    @declared_attr
-    def previous(cls):  # pylint:disable=E0213
-        return relationship(
-            cls,
-            uselist=False,
-            remote_side=cls.previous_subnet_id,
-            primaryjoin=foreign(cls.previous_subnet_id) == remote(cls.id),
-            post_update=True,
-        )
-
+    # Let's see if I can get a sensible backref to work for parent in such a
+    # way that : A) adding an AssignedSubnet to a given object's list of
+    # children populates its parent_subnet_id B) setting an AssignedSubnet's
+    # parent adds that object to the parent's children list
     @declared_attr
     def parent(cls):  # pylint:disable=E0213
         return relationship(
@@ -85,16 +79,8 @@ class AssignedSubnet(Subnet, sa_base):
             remote_side=cls.parent_subnet_id,
             primaryjoin=foreign(cls.parent_subnet_id) == remote(cls.id),
             post_update=True,
+            backref=backref("children", uselist=True),
         )
-
-    # TODO Use a hybrid property setter?
-    def set_next(self, next_subnet):
-        setattr(self, 'next', next_subnet)
-        next_subnet.previous = self
-
-    # TODO Use a hybrid property setter?
-    def set_parent(self, parent_subnet):
-        setattr(self, 'parent', parent_subnet)
 
     @property
     def name(self):
@@ -113,8 +99,6 @@ class AssignedSubnet(Subnet, sa_base):
         super(self.__class__, self).__init__(*args[:2])
         *_, name = args
         self.name = name
-        self._next = None
-        self._prev = None
 
     def __repr__(self):
         return ("<IPv4 assignment: {t.bold}{0}{t.normal}/{t.green}{1}"
