@@ -6,15 +6,15 @@ python:
   - 3.6
 
 install:
-  - pip install pipenv tox tox-pipenv
+  - pip install pipenv tox
 
 before_script:
-        - pip freeze
+  - pip freeze
 
 script:
-        - tox -v
+  - tox -v
 
 after_success:
-        - cd ${TRAVIS_BUILD_DIR}
-        - coveralls
-        - source .tox/py3/bin/activate; vast -h
+  - cd ${TRAVIS_BUILD_DIR}
+  - coveralls
+  - source .tox/py3/bin/activate; vast -h
