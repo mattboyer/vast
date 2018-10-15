@@ -6,7 +6,7 @@ python:
   - 3.6
 
 install:
-  - pip install pipenv
+  - pip install pipenv tox tox-pipenv
 
 before_script:
         - pip freeze
