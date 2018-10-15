@@ -9,8 +9,9 @@ install:
   - pip install pipenv
     # Should we install the dev dependencies as well?
   - pipenv install
-    # Tox runs within the virtualenv created by Pipenv
-  - pipenv run pip install tox tox-pipenv
+    # Tox runs *outside* the virtualenv created by Pipenv?!
+    # Maybe this is enough for tox-pipenv to do the right thing?
+  - pip install tox==3.0 tox-pipenv
 
 before_script:
   - pipenv run pip freeze
