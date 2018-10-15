@@ -17,7 +17,8 @@ before_script:
   - pipenv run pip freeze
 
 script:
-  - pipenv run tox -v
+  # Tox is installed outside the virtualenv we've created through pipenv
+  - tox -v
 
 after_success:
   - cd ${TRAVIS_BUILD_DIR}
