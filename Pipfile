@@ -1,0 +1,28 @@
+[[source]]
+
+url = "https://pypi.python.org/simple"
+verify_ssl = true
+name = "pypi"
+
+
+[packages]
+
+blessings = "*"
+pyxdg = "*"
+requests = "*"
+sqlalchemy = "*"
+tox-pipenv = "*"
+
+
+[dev-packages]
+
+# Some of these may be redundant with the tools used by pre-commit but are
+# needed presumably to support validation on Travis
+"flake8" = "*"
+coverage = "*"
+coveralls = "*"
+ipdb = "*"
+mock = "*"
+nose = "*"
+pylint = "*"
+# XXX Figure out how Tox and Pipenv are to interact
