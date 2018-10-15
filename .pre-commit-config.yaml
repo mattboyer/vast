@@ -1,18 +1,11 @@
-# These are repos *where the hook logic lives*, no information pertaining to
-# the repo in which the hooks are being configured is captured in this YAML
-# document!
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    sha: v1.2.0
+    sha: v2.0.0
     hooks:
     - id: check-yaml
     - id: end-of-file-fixer
     - id: check-ast
     - id: check-merge-conflict
     - id: debug-statements
-    # I think it's time I learned to love flake8
     - id: flake8
-  #- repo: https://github.com/pre-commit/mirrors-pylint.git
-  #  sha: v1.8.2
-  #  hooks:
-  #    - id: pylint
+    - id: name-tests-test
