@@ -6,13 +6,17 @@ python:
   - 3.6
 
 install:
-  - pip install pipenv tox
+  - pip install pipenv
+    # Should we install the dev dependencies as well?
+  - pipenv install
+    # Tox runs within the virtualenv created by Pipenv
+  - pipenv run pip install tox
 
 before_script:
-  - pip freeze
+  - pipenv run pip freeze
 
 script:
-  - tox -v
+  - pipenv run tox -v
 
 after_success:
   - cd ${TRAVIS_BUILD_DIR}
