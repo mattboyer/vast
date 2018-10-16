@@ -1,5 +1,5 @@
 from unittest import TestCase
-from mock import patch, Mock, call
+from unittest.mock import patch, Mock, call
 
 from src.metadata.IANA_IPv4_assignments import TopLevelDelegation, populate_IANA_IPv4_assignments
 from src.net.IPv4 import Subnet, Address

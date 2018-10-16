@@ -1,5 +1,5 @@
 from unittest import TestCase
-from mock import patch
+from unittest.mock import patch
 
 from src.metadata.assigned import AssignedSubnet
 from src.metadata.linker import SubnetLinker

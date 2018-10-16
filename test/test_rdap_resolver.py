@@ -1,4 +1,4 @@
-from mock import patch, Mock, call
+from unittest.mock import patch, Mock, call
 from unittest import TestCase
 
 from src.net.IPv4 import Address, Subnet

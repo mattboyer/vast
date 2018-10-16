@@ -1,5 +1,5 @@
 from unittest import TestCase
-from mock import patch, Mock, call
+from unittest.mock import patch, Mock, call
 
 from src.metadata import ResolutionException
 from src.metadata.assigned import AssignedSubnet
