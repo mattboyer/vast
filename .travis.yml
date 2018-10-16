@@ -11,7 +11,7 @@ install:
     #- pipenv install
     # Tox runs *outside* the virtualenv created by Pipenv?!
     # Maybe this is enough for tox-pipenv to do the right thing?
-  - pip install tox==3.0 tox-pipenv
+  - pip install tox
 
 before_script:
   - pipenv run pip freeze
