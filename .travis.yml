@@ -16,7 +16,7 @@ before_script:
   - pipenv graph
 
 script:
-  - pre-commit run -av
+  - pipenv run pre-commit run -av
   - pipenv run nosetests --with-coverage --cover-erase --cover-package=src.net,src.metadata
 
 after_success:
