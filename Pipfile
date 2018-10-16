@@ -20,4 +20,3 @@ coverage = "*"
 coveralls = "*"
 pre-commit = "*"
 nose = "*"
-# XXX Figure out how Tox and Pipenv are to interact

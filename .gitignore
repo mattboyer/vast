@@ -1,5 +1,4 @@
-Pipfile.lock
-.tox
-.coverage
 *.pyc
+.coverage
+Pipfile.lock
 RELEASE-VERSION

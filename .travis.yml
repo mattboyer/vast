@@ -5,6 +5,9 @@ python:
   - 3.5
   - 3.6
 
+env:
+  - PIPENV_IGNORE_VIRTUALENV=1
+
 install:
   - pip install pipenv
   - pipenv install --dev
@@ -13,6 +16,7 @@ before_script:
   - pipenv graph
 
 script:
+  - pre-commit run -av
   - pipenv run nosetests --with-coverage --cover-erase --cover-package=src.net,src.metadata
 
 after_success:
