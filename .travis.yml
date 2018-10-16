@@ -2,18 +2,19 @@ language: python
 sudo: false
 
 python:
+  - 3.5
   - 3.6
-  - 3.7
 
 env:
   - PIPENV_IGNORE_VIRTUALENVS=1
 
 install:
-  - pip install pipenv
+  - pip install pip pipenv
   - pipenv install --dev
 
 before_script:
   - pipenv graph
+  - pipenv check
 
 script:
   - pipenv run pre-commit run -av
