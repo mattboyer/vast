@@ -6,7 +6,7 @@ python:
   - 3.6
 
 env:
-  - PIPENV_IGNORE_VIRTUALENV=1
+  - PIPENV_IGNORE_VIRTUALENVS=1
 
 install:
   - pip install pipenv
