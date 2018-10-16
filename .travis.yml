@@ -9,7 +9,8 @@ env:
   - PIPENV_IGNORE_VIRTUALENVS=1
 
 install:
-  - pip install pip pipenv
+  - pip install --upgrade pip
+  - pip install pipenv
   - pipenv install --dev
 
 before_script:
